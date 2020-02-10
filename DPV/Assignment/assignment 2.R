@@ -4,4 +4,6 @@ library(readr)
 library(dplyr)
 library(lubridate)
 
-test <-"this is a gittest"
+data <-read_delim(file="DPV/Data/SuperSales/SuperstoreSales_main.csv", delim=";")
+head(data)
+
