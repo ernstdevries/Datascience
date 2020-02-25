@@ -1,0 +1,6 @@
+Questions for session:
+- On the PostgreSQL server, why does it show 0 in "Geschätzte Anzahl von Datensätzen", 
+  even though the tables were already populated?
+- Why is the sql query in the end not working? (Assignment 2 and 3)
+- Is it correct that in Assignment 2 the sales table contains every single purchase, or do i need to summarize 
+  each order day?
