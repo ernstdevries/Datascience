@@ -5,7 +5,7 @@ library(caret)
 library(e1071)
 library(readr)
 
-chol1 = read.spss("voorbeeld7_1.sav", to.data.frame=TRUE)
+chol1 = read.spss("DM/Data/voorbeeld7_1.sav", to.data.frame=TRUE)
 ggplot(chol1, aes(x = chol, y = leeftijd)) +
   geom_point() +
   stat_smooth(method = "lm",
