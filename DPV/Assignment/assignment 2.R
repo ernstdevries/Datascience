@@ -15,6 +15,7 @@ product <- data %>%
   distinct() %>%
   ungroup() %>%
   mutate(productId = row_number())
+
  
 
 customer <- data %>%
@@ -30,6 +31,7 @@ customer <- data %>%
 sales <- data %>%
   select(Order_Date_Day,Product_Order_Price_Total,Product_Name,Product_Category, Customer_Country,Customer_Name)%>%
   rename(orderDate = Order_Date_Day, sales=Product_Order_Price_Total) %>%
+  mutate(orderDate = mdy(orderDate)) %>%
   full_join(product, sales, by = c("Product_Name" = "name","Product_Category"="category")) %>%
   full_join(customer,sales, by = c("Customer_Name"="name","Customer_Country"="country")) 
 
