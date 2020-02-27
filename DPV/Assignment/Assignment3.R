@@ -6,11 +6,11 @@ library(lubridate)
 library(tidyr)
 
 #Read data files
-data0 <-read_delim(file="SuperstoreSales_main.csv", delim=";", col_names = TRUE, col_types = NULL, locale = locale(encoding = 'LATIN1'))
+data0 <-read_delim(file="DPV/Data/SuperSales/SuperstoreSales_main.csv", delim=";", col_names = TRUE, col_types = NULL, locale = locale(encoding = 'LATIN1'))
 head(data0)
-#data1 <-read_delim(file="SuperstoreSales_manager.csv", delim=";", col_names = TRUE, col_types = NULL, locale = locale(encoding = 'LATIN1'))
+#data1 <-read_delim(file="DPV/Data/SuperSales/SuperstoreSales_manager.csv", delim=";", col_names = TRUE, col_types = NULL, locale = locale(encoding = 'LATIN1'))
 #head(data1)
-data2 <-read_delim(file="SuperstoreSales_returns.csv", delim=";", col_names = TRUE, col_types = NULL, locale = locale(encoding = 'LATIN1'))
+data2 <-read_delim(file="DPV/Data/SuperSales/SuperstoreSales_returns.csv", delim=";", col_names = TRUE, col_types = NULL, locale = locale(encoding = 'LATIN1'))
 head(data2)
 
 #Convert dates in datasets from character data type to date data type
@@ -19,7 +19,8 @@ data0$`Ship Date` = dmy(data0$`Ship Date`)
 
 #Create new column that checks if a product was delivered too late
 data0$Late <- interval(data0$`Order Date`, data0$`Ship Date`)/ddays()
-data0$Late <- if_else(data0$Late > 3, "Late", "NotLate", missing = NULL)
+data0$Late <- if_else(data0$Late > 3, "Late", "NotLate", missing = NULL) #Mike shouldn't this be >2 or >=3?
+
 
 #Join the datasets
 data0 <- data0 %>%
@@ -80,9 +81,11 @@ Sales <- Sales %>%
                             "Customer Segment" = "segment") %>%
   select( -`Customer Name`, -Province, -Region, -`Customer Segment`)
 
-#Join Sales table with ReturnStatus table
+#Join Sales table with ReturnStatus table & Delete redundant information
 Sales <- Sales %>%
-  full_join(ReturnStatus, by = c("Status" = "returnvalue")) 
+  full_join(ReturnStatus, by = c("Status" = "returnvalue")) %>%
+  select( -`Row ID`, -`Order ID`, -`Order Priority`, -`Discount`,-`Product Container`,-`segment`,-`region`,-`subcategory`,-`Status`,-`Product Base Margin`,-`Ship Mode`,-`Ship Date`)
+
 
 #Create connection to database
 drv <- dbDriver("PostgreSQL")
@@ -106,7 +109,12 @@ str(dbReadTable(con,"Product"))
 dbGetQuery(con,
            "SELECT table_name FROM information_schema.tables
             WHERE table_schema=’ass3’") ## to get the tables from schema ass2
-str(dbReadTable(con, c("ass3", "Sales")))
+
+
+tables <- c("Customer","Product","ReturnStatus","Sales")
+for(val in tables){
+  str(dbReadTable(con, c("ass3", val)))
+}
 
 dbDisconnect(con) 
   
