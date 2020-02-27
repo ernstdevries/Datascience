@@ -49,4 +49,9 @@ dbWriteTable(con, "sales", value = sales, overwrite = T, row.names = F)
 dbGetQuery(con,
            "SELECT table_name FROM information_schema.tables
 WHERE table_schema=’ass2’") ## to get the tables from schema ass2
-str(dbReadTable(con, c("ass2", "product")))
+
+tables <- c("product","customer","sales")
+for(val in tables){
+  str(dbReadTable(con, c("ass2", val)))
+}
+
