@@ -19,7 +19,7 @@ data0$`Ship Date` = dmy(data0$`Ship Date`)
 
 #Create new column that checks if a product was delivered too late
 data0$Late <- interval(data0$`Order Date`, data0$`Ship Date`)/ddays()
-data0$Late <- if_else(data0$Late > 3, "Late", "NotLate", missing = NULL) #Mike shouldn't this be >2 or >=3?
+data0$Late <- if_else(data0$Late > 2, "Late", "NotLate", missing = NULL) 
 
 
 #Join the datasets
