@@ -20,7 +20,7 @@ chol1$residuals <- residuals(fit2)
 ggplot(chol1, aes(x = residuals)) +
   geom_histogram()
 
-births <-read_delim(file="births.csv", delim=",", col_names = TRUE, col_types = NULL)
+births <-read_delim(file="DM/Data/births.csv", delim=",", col_names = TRUE, col_types = NULL)
 head(births)
 births <- births %>%
   mutate(home = factor(if_else(child_birth %in% "first line child birth, at home", "home", "not_home"), levels = c("home","not_home"))) %>%
