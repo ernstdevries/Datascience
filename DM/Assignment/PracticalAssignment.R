@@ -4,6 +4,8 @@ library(dplyr)
 library(caret)
 library(e1071)
 library(readr)
+library(rpart)
+library(rpart.plot)
 
 chol1 = read.spss("DM/Data/voorbeeld7_1.sav", to.data.frame=TRUE)
 ggplot(chol1, aes(x = chol, y = leeftijd)) +
@@ -49,8 +51,11 @@ trainRowNumbers <- createDataPartition(mydat$home, p=0.8, list=FALSE)
 trainData <- mydat[trainRowNumbers,c(2,4,8,9,10)]
 # Step 3: Create the test dataset
 testData <- mydat[-trainRowNumbers,c(2,4,8,9,10)]
-fit_rpart <- train(home ~ pari + age_cat + etni + urban, data = trainData,
-                   method="rpart")
-plot(fit_rpart)
-predicted2 <- predict(fit_rpart, testData)
+fit_rpart <- rpart(home ~ pari + age_cat + etni + urban, data = trainData,
+                   method="class")
+#fit_rpart <- train(home ~ pari + age_cat + etni + urban, data = trainData,
+#                   method="rpart)
+#plot(fit_rpart)
+prp(fit_rpart)
+predicted2 <- predict(fit_rpart, testData, type ="class")
 confusionMatrix(reference = testData$home, data = predicted2)
