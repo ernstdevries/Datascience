@@ -50,13 +50,13 @@ data0 <-data0 %>%
   distinct() %>%
   ungroup() %>%
   rename(.,Cursus = Hostkey) %>%
-  mutate(.,Collegejaar = strsplit(Datum,"/")[[1]][1])
+  mutate(.,Collegejaar = strsplit(Datum,"/")[[1]][1]) %>%
+  transform(.,Collegejaar = as.numeric(Collegejaar))
 
   
-  
-## Does not work yet
-table <- data0 %>%
-  full_join(data0,finalDataCourses,by=c(Cursus = Cursus, Collegejaar=Collegejaar))
 
+data0 <-data0%>% 
+  left_join(dataCourse2)%>%
+  drop_na(.,Medewerker)
 
 
