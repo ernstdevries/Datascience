@@ -1,0 +1,19 @@
+Naam-Activiteit;Beschrijving-Activiteit;Hostkey;Hostkey;Activiteitstype;Datum;Tijd van;Tijd tot en met;Grootte;Zaal-Activiteit
+TG MOD07 Lichamelijk Onderzoek/WG01/01;Lichamelijk Onderzoek;201400154;201400468;WG;17-3-2015 00:00;10:30:00;13:15:00;100;NH 207
+TG MOD07 Lichamelijk Onderzoek/WG01/01;Lichamelijk Onderzoek;201400154;201400154;WG;17-3-2015 00:00;10:30:00;13:15:00;100;NH 207
+TG MOD07 Lichamelijk Onderzoek/WG01/02;Lichamelijk Onderzoek;201400154;201400468;WG;17-3-2015 00:00;13:45:00;16:30:00;100;NH 207
+TG MOD07 Lichamelijk Onderzoek/WG01/02;Lichamelijk Onderzoek;201400154;201400154;WG;17-3-2015 00:00;13:45:00;16:30:00;100;NH 207
+ME M 1B Advanced Programming in Engineering/COL03/01;Advanced Programming in Engineering 191158500;191158500;#SPLUS0EEE1E;COL;24-11-2014 00:00;08:45:00;12:30:00;25;OH 112
+ME M 1B Advanced Programming in Engineering/COL03/01;Advanced Programming in Engineering 191158500;191158500;#SPLUS05AE50;COL;24-11-2014 00:00;08:45:00;12:30:00;25;OH 112
+ME M 1B Advanced Programming in Engineering/COL01/01;Advanced Programming in Engineering 191158500;191158500;#SPLUS0EEE1E;COL;10-11-2014 00:00;08:45:00;12:30:00;25;OH 112
+ME M 1B Advanced Programming in Engineering/COL01/01;Advanced Programming in Engineering 191158500;191158500;#SPLUS05AE50;COL;10-11-2014 00:00;08:45:00;12:30:00;25;OH 112
+ME M 1B Advanced Programming in Engineering/COL07/01;Advanced Programming in Engineering 191158500;191158500;#SPLUS0EEE1E;COL;5-1-2015 00:00;08:45:00;12:30:00;25;OH 112
+ME M 1B Advanced Programming in Engineering/COL07/01;Advanced Programming in Engineering 191158500;191158500;#SPLUS05AE50;COL;5-1-2015 00:00;08:45:00;12:30:00;25;OH 112
+ME M 1B Advanced Programming in Engineering/COL08/01;Advanced Programming in Engineering 191158500;191158500;#SPLUS0EEE1E;COL;12-1-2015 00:00;08:45:00;12:30:00;25;CR 3D
+ME M 1B Advanced Programming in Engineering/COL08/01;Advanced Programming in Engineering 191158500;191158500;#SPLUS05AE50;COL;12-1-2015 00:00;08:45:00;12:30:00;25;CR 3D
+ME M 1B Advanced Programming in Engineering/COL04/01;Advanced Programming in Engineering 191158500;191158500;#SPLUS0EEE1E;COL;1-12-2014 00:00;08:45:00;12:30:00;25;CU B101
+ME M 1B Advanced Programming in Engineering/COL04/01;Advanced Programming in Engineering 191158500;191158500;#SPLUS05AE50;COL;1-12-2014 00:00;08:45:00;12:30:00;25;CU B101
+IO MOD03 Project/PRA00/02;Project Productrealisatie;#SPLUSD44F64;201300121;PRA;18-2-2015 00:00;13:45:00;17:30:00;40;CR 4A
+IO MOD03 Project/PJB04/01;Project Productrealisatie;#SPLUSD44F64;201300121;PJB;2-3-2015 00:00;08:45:00;10:30:00;110;OH 211
+IO MOD03 Project/PRA01/01;Project Productrealisatie;#SPLUSD44F64;201300121;PRA;5-3-2015 00:00;08:45:00;12:30:00;10;WH 216 Modelwerkplaats CTW
+IO MOD03 Project/PRA01/01;Project Productrealisatie;#SPLUSD44F64;201300121;PRA;5-3-2015 00:00;08:45:00;12:30:00;10;WH 122 Metaalwerkplaats CTW
