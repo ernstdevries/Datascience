@@ -69,16 +69,19 @@ data0 <-data0%>%
 ##Room 70% occupied assume that room needs a date to take place
 data0 <- data0 %>%
   drop_na(.,Zaal.Activiteit) %>%
-  drop_na(.,Datum) %>%
-  arrange(Tijd.van,Tijd.tot.en.met)%>%
-  group_by(Tijd.tot.en.met) %>%
-  mutate(diff(Tijd.tot.en.met - Tijd.van, differences = as.numeric(diff,units=days)))
+  drop_na(.,Datum)
   
 
 KPIRoom <- data0 %>%
   group_by(Zaal.Activiteit) %>% 
-  summarize(count=n())  %>%
-  mutate(K=sum(data0$Tdiff))
+  summarize(Timeoccupied = sum(Tdiff)) %>%
+  mutate(MaxhoursDay = length(unique(data0$Datum)) * 8) %>%
+  mutate(MaxhoursFullday = length(unique(data0$Datum)) * 12) %>%
+  mutate(OccupationDay = Timeoccupied/MaxhoursDay) %>%
+  mutate(OccupationFullday = Timeoccupied/MaxhoursFullday)
+
+
+
 
 
 
