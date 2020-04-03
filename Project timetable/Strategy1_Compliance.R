@@ -38,7 +38,7 @@ head(data0)
 
 
 data0 <-read_delim(file="Project timetable/Activiteitenoverzicht_2013-2014_v2.csv", delim=",", col_names = TRUE, col_types = NULL, locale = locale(encoding = 'LATIN1'))
-head(data0)
+
 
 
 data0 <-data0 %>%
@@ -51,12 +51,42 @@ data0 <-data0 %>%
   ungroup() %>%
   rename(.,Cursus = Hostkey) %>%
   mutate(.,Collegejaar = strsplit(Datum,"/")[[1]][1]) %>%
-  transform(.,Collegejaar = as.numeric(Collegejaar))
+  transform(.,Collegejaar = as.numeric(Collegejaar)) %>%
+  mutate(Tijd.van = as.POSIXct(Tijd.van,format="%H:%M:%S")) %>%
+  mutate(Tijd.tot.en.met = as.POSIXct(Tijd.tot.en.met,format="%H:%M:%S")) %>%
+  mutate(Tdiff = difftime(Tijd.tot.en.met,Tijd.van , units = "hours"))
 
-  
 
+
+
+##Only drop NA at Medewerker if you dont need them.
 data0 <-data0%>% 
   left_join(dataCourse2)%>%
   drop_na(.,Medewerker)
+
+##KPI's 
+
+##Room 70% occupied assume that room needs a date to take place
+data0 <- data0 %>%
+  drop_na(.,Zaal.Activiteit) %>%
+  drop_na(.,Datum) %>%
+  arrange(Tijd.van,Tijd.tot.en.met)%>%
+  group_by(Tijd.tot.en.met) %>%
+  mutate(diff(Tijd.tot.en.met - Tijd.van, differences = as.numeric(diff,units=days)))
+  
+
+KPIRoom <- data0 %>%
+  group_by(Zaal.Activiteit) %>% 
+  summarize(count=n())  %>%
+  mutate(K=sum(data0$Tdiff))
+
+
+
+
+
+  
+
+
+
 
 
