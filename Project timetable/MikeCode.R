@@ -10,7 +10,7 @@ data0 <-read_delim(file="Activiteitenoverzicht_2013-2014_v2.csv", delim=",", col
 data1 <-read_delim(file="Activiteitenoverzicht_2014-2015_v2.csv", delim=",", col_names = TRUE, locale = locale(encoding = 'LATIN1'))
 data2 <-read_delim(file="Activiteitenoverzicht_2015-2016_v2.csv", delim=",", col_names = TRUE, locale = locale(encoding = 'LATIN1'))
 data3 <-read_delim(file="Activiteitenoverzicht_2016-2017_v2.csv", delim=",", col_names = TRUE, locale = locale(encoding = 'LATIN1'))
-data4 <- read_excel("overview of programs and abbreviations.xlsx", col_names = TRUE, col_types = NULL)
+data4 <- read_excel("overview of programs and abbreviations (3).xlsx", col_names = TRUE, col_types = NULL)
 
 #Appending all of the Utwente Activity data to one dataset so that they are together
 data5 <- rbind(data0, data1, data2, data3) 
@@ -183,7 +183,7 @@ UtwenteRoomActivity <- distinct(UtwenteRoomActivity, Tdiff, Date, Zaal.Activitei
 
 agg2 <- aggregate(UtwenteRoomActivity$Tdiff, by=list(Date = UtwenteRoomActivity$Date, Room = UtwenteRoomActivity$Zaal.Activiteit), FUN = sum)
 
-SaxionActivity <- read.xlsx("All timetabling activities SAX 2013-2015 (1).xlsx", sheet = 1, startRow = 1, colNames = TRUE)
+SaxionActivity <- read.xlsx("All timetabling activities SAX 2013-2015.xlsx", sheet = 1, startRow = 1, colNames = TRUE)
 SaxionCopy <- SaxionActivity
 
 SaxionCopy$START <- hm(format(as.POSIXct((SaxionCopy$START) * 86400, origin = "1970-01-01", tz = "UTC"), "%H:%M"))
