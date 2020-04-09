@@ -6,10 +6,10 @@ library(openxlsx)
 library(chron)
 library(tidyverse)
 
-data0 <-read_delim(file="Activiteitenoverzicht_2013-2014_v2 (1)/Activiteitenoverzicht_2013-2014_v2.csv", delim=",", col_names = TRUE, locale = locale(encoding = 'LATIN1'))
-data1 <-read_delim(file="Activiteitenoverzicht_2014-2015_v2/Activiteitenoverzicht_2014-2015_v2.csv", delim=",", col_names = TRUE, locale = locale(encoding = 'LATIN1'))
-data2 <-read_delim(file="Activiteitenoverzicht_2015-2016_v2/Activiteitenoverzicht_2015-2016_v2.csv", delim=",", col_names = TRUE, locale = locale(encoding = 'LATIN1'))
-data3 <-read_delim(file="Activiteitenoverzicht_2016-2017_v2/Activiteitenoverzicht_2016-2017_v2.csv", delim=",", col_names = TRUE, locale = locale(encoding = 'LATIN1'))
+data0 <-read_delim(file="Activiteitenoverzicht_2013-2014_v2.csv", delim=",", col_names = TRUE, locale = locale(encoding = 'LATIN1'))
+data1 <-read_delim(file="Activiteitenoverzicht_2014-2015_v2.csv", delim=",", col_names = TRUE, locale = locale(encoding = 'LATIN1'))
+data2 <-read_delim(file="Activiteitenoverzicht_2015-2016_v2.csv", delim=",", col_names = TRUE, locale = locale(encoding = 'LATIN1'))
+data3 <-read_delim(file="Activiteitenoverzicht_2016-2017_v2.csv", delim=",", col_names = TRUE, locale = locale(encoding = 'LATIN1'))
 data4 <- read_excel("overview of programs and abbreviations.xlsx", col_names = TRUE, col_types = NULL)
 
 #Appending all of the Utwente Activity data to one dataset so that they are together
@@ -59,18 +59,11 @@ UtwenteActivity <- data5 %>%
 
 
 
-print(nrow(distinct(UtwenteActivity, UtwenteActivity$Coursecode)))
-print(distinct(UtwenteActivity, UtwenteActivity$Coursecode, .keep_all = TRUE))
-
-
-
 
 UtwenteBreaks <- UtwenteActivity %>%
   arrange(Date, Coursecode) %>%
   mutate(Break = lead(Tijd.van) - Tijd.tot.en.met)
 
-
-UtwenteBreaks <- aggregate(UtwenteActivity$Tdiff, by=list(Date = UtwenteActivity$Date, Programme = UtwenteActivity$Programme, Start = UtwenteActivity$Tijd.van, End = UtwenteActivity$Tijd.tot.en.met), FUN = sum)
 
 
 
