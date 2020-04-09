@@ -73,6 +73,8 @@ data0 <- data0 %>%
   
 
 KPIRoom <- data0 %>%
+  drop_na(Zaal.Activiteit) %>%
+  drop_na(Tdiff) %>%
   group_by(Zaal.Activiteit) %>% 
   summarize(Timeoccupied = sum(Tdiff)) %>%
   mutate(MaxhoursDay = length(unique(data0$Datum)) * 8) %>%
@@ -81,6 +83,17 @@ KPIRoom <- data0 %>%
   mutate(OccupationFullday = Timeoccupied/MaxhoursFullday)
 
 
+
+Mosthours <- data0 %>%
+  drop_na(Beschrijving.Activiteit) %>%
+  group_by(Beschrijving.Activiteit,Cursus) %>%
+  filter(Activiteitstype == "WC" | Activiteitstype == "HC") %>%
+  distinct(Cursus,Datum,Tijd.van,Beschrijving.Activiteit,Tdiff) %>%
+  summarize(.,Timespend = sum(Tdiff))
+
+
+
+  
 
 
 
