@@ -76,7 +76,7 @@ KPIRoom <- data0 %>%
   group_by(Zaal.Activiteit) %>% 
   summarize(Timeoccupied = sum(Tdiff)) %>%
   mutate(MaxhoursDay = length(unique(data0$Datum)) * 8) %>%
-  mutate(MaxhoursFullday = length(unique(data0$Datum)) * 12) %>%
+  mutate(MaxhoursFullday = length(unique(data0$Datum)) * 14) %>%
   mutate(OccupationDay = Timeoccupied/MaxhoursDay) %>%
   mutate(OccupationFullday = Timeoccupied/MaxhoursFullday)
 
