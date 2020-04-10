@@ -62,20 +62,20 @@ UtwenteBreaks <- UtwenteActivity %>%
   #the sessions are still not ordered correctly. For example in Tijd.van the first session starts at 10:30 while the second session
   #starts at 8:45, even though they are on the same day for the same course. Because of this, before this arrange is used, another arrange
   #is used to ensure that all Tijd.van values are in the correct order.
-  arrange(Tijd.van) %>%
-  arrange(Date,  Coursecode) %>%
+  arrange(Tijd.van, Coursecode) %>%
+  arrange(Date,  Programme) %>%
   mutate(NextSession = lead(Tijd.van, 1)) %>%
   mutate(NextDate = lead(Date, 1)) %>%
-  mutate(NextCourse = lead(Coursecode, 1)) %>%
-  mutate(Break = if_else(Date != NextDate | Coursecode != NextCourse, 0, abs(as.numeric(difftime(NextSession, Tijd.tot.en.met, units = "hours"))))) 
+  mutate(NextCourse = lead(Programme, 1)) %>%
+  mutate(Break = if_else(Date != NextDate | Programme != NextCourse, 0, abs(as.numeric(difftime(NextSession, Tijd.tot.en.met, units = "hours"))))) 
 
 UtwenteBreaksSummary <- UtwenteBreaks %>%
   mutate(BreaksOver2Hours = if_else(Break >= 2, TRUE, FALSE)) %>%
-  group_by(Date, Coursecode) %>%
+  group_by(Date, Programme) %>%
   summarise(timesOver2Hours = length(BreaksOver2Hours[BreaksOver2Hours]))
 
 MoreThan2FreeHours <- length(UtwenteBreaksSummary$timesOver2Hours[UtwenteBreaksSummary$timesOver2Hours >= 2])
-percentageMoreThan2FreeHours <- (MoreThan2FreeHours / nrow(distinct(UtwenteBreaksSummary, Date))) * 100
+percentageMoreThan2FreeHours <- (MoreThan2FreeHours / length(UtwenteBreaksSummary$timesOver2Hours)) * 100
 breakHours <- sum(UtwenteBreaks$Break, na.rm = TRUE)
 cat("Number of times the students participating in a course have breaks longer than 2 hours: ", MoreThan2FreeHours)
 cat("Number of break hours the students participating in a course have: ", breakHours)
@@ -200,14 +200,15 @@ SaxionCopy <- SaxionActivity
 SaxionCopy$START <- hm(format(as.POSIXct((SaxionCopy$START) * 86400, origin = "1970-01-01", tz = "UTC"), "%H:%M"))
 SaxionCopy$END <- hm(format(as.POSIXct((SaxionCopy$END) * 86400, origin = "1970-01-01", tz = "UTC"), "%H:%M"))
 SaxionCopy$DATE <- as.Date((SaxionCopy$DATE), origin = "1900-01-01")
-SaxionCopy <- distinct(SaxionCopy,DATE, START, CLASS, BISONCODE,   .keep_all = TRUE)
+SaxionCopy <- distinct(SaxionCopy,DATE, START, CLASS, EDUC.CODE1,   .keep_all = TRUE)
 
 SaxionCopy <- SaxionCopy %>%
   transform(START = make_datetime(year(DATE), month(DATE), day(DATE), hour(START), minute(START))) %>%
   transform(END = make_datetime(year(DATE), month(DATE), day(DATE), hour(END), minute(END))) %>%
   mutate(Tdiff = difftime(END, START , units = "hours")) %>%
   transform(ACTIVITY = as.factor(ACTIVITY)) %>%
-  mutate(WEEKDAY = wday(DATE))
+  mutate(WEEKDAY = wday(DATE)) %>%
+  drop_na(EDUC.CODE1)
   #group_by(BISONCODE) %>%
   #summarise(contact_hours = sum(Tdiff, na.rm = TRUE)) %>%
   #filter(contact_hours != 0) %>%
@@ -259,4 +260,25 @@ SaxionTeachers <- SaxionCopy %>%
   filter(!is.na(TEACHER))
   
 aggSax3 <- aggregate(SaxionTeachers$Tdiff, by=list(Date = SaxionTeachers$DATE, TeacherName = SaxionTeachers$NAMEFULL), FUN = sum)
-print(distinct(SaxionTeachers, CLASS))
+
+SaxionBreak <- SaxionCopy %>%
+  arrange(START, CLASS) %>%
+  arrange(DATE, EDUC.CODE1) %>%
+  mutate(NextSession = lead(START, 1)) %>%
+  mutate(NextDate = lead(DATE, 1)) %>%
+  mutate(NextCourse = lead(EDUC.CODE1, 1)) %>%
+  mutate(Break = if_else(DATE != NextDate | EDUC.CODE1 != NextCourse, 0 , abs(as.numeric(difftime(NextSession, END, units = "hours")))))
+
+SaxionBreakSummary <- SaxionBreak %>%
+  mutate(BreaksOver2Hours = if_else(Break >= 2, TRUE, FALSE)) %>%
+  group_by(DATE, EDUC.CODE1) %>%
+  summarise(timesOver2Hours = length(BreaksOver2Hours[BreaksOver2Hours]))
+
+MoreThan2FreeHours <- length(SaxionBreakSummary$timesOver2Hours[SaxionBreakSummary$timesOver2Hours >= 2])
+percentageMoreThan2FreeHours <- (MoreThan2FreeHours / length(SaxionBreakSummary$timesOver2Hours)) * 100
+print(length(SaxionBreakSummary$timesOver2Hours))
+print(nrow(distinct(SaxionBreakSummary, DATE)))
+breakHours <- sum(SaxionBreak$Break, na.rm = TRUE)
+cat("Number of times the students participating in a course have breaks longer than 2 hours: ", MoreThan2FreeHours)
+cat("Number of break hours the students participating in a course have: ", breakHours)
+cat("Percentage of times the students participating in a course have breaks longer than 2 hours: ", percentageMoreThan2FreeHours)
