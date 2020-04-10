@@ -50,12 +50,13 @@ data0 <-data0 %>%
   distinct() %>%
   ungroup() %>%
   rename(.,Cursus = Hostkey) %>%
-  mutate(.,Collegejaar = strsplit(Datum,"/")[[1]][1]) %>%
+  transform(.,Datum = as.POSIXct(Datum)) %>%
+  mutate(Collegejaar = format(Datum,"%Y")) %>%
   transform(.,Collegejaar = as.numeric(Collegejaar)) %>%
   mutate(Tijd.van = as.POSIXct(Tijd.van,format="%H:%M:%S")) %>%
   mutate(Tijd.tot.en.met = as.POSIXct(Tijd.tot.en.met,format="%H:%M:%S")) %>%
   mutate(Tdiff = difftime(Tijd.tot.en.met,Tijd.van , units = "hours"))
-
+ 
 
 
 
@@ -89,7 +90,7 @@ Mosthours <- data0 %>%
   drop_na(Beschrijving.Activiteit) %>%
   group_by(Cursus) %>%
   filter(Activiteitstype == "WC" | Activiteitstype == "HC") %>%
-  distinct(Beschrijving.Activiteit,Tdiff,Naam.Activiteit) %>%
+  distinct(Cursus,Datum,Tijd.van,Beschrijving.Activiteit,Tdiff,Naam.Activiteit) %>%
   summarize(.,Timespend = sum(Tdiff))
 
 
