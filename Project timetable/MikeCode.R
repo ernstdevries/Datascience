@@ -27,7 +27,6 @@ data5 <-data5 %>%
   distinct() %>%
   ungroup() %>%
   rename(.,Cursus = Hostkey) %>%
-  filter(Cursus > 10000000) %>%
   mutate(Collegejaar = year(Datum)) %>%
   transform(Collegejaar = as.numeric(Collegejaar)) %>%
   mutate(Date = gsub(" 00:00:00", "",Datum)) %>%
@@ -47,6 +46,7 @@ data5 <- data5 %>%
   select(-c(Grootte)) %>%
   mutate(Coursecode = as.numeric(Cursus)) %>%
   select(-c(Cursus)) %>%
+  filter(Coursecode > 10000000) %>%
   mutate(Programme = gsub( " .*$", "", Naam.Activiteit )) %>%
   mutate(Activity = as.factor(Activiteitstype)) %>%
   select(-c(Activiteitstype))
@@ -57,18 +57,29 @@ UtwenteActivity <- data5 %>%
   full_join(data4, by = c("Programme" = "Abbreviation")) %>%
   distinct(Tijd.van, Coursecode, Date, .keep_all = TRUE)
 
-
-
-
 UtwenteBreaks <- UtwenteActivity %>%
-  arrange(Date, Coursecode) %>%
-  mutate(Break = lead(Tijd.van) - Tijd.tot.en.met)
+  #2 times arrange after each other is necessary. If only the second arrange is used it could be that for each course on each day
+  #the sessions are still not ordered correctly. For example in Tijd.van the first session starts at 10:30 while the second session
+  #starts at 8:45, even though they are on the same day for the same course. Because of this, before this arrange is used, another arrange
+  #is used to ensure that all Tijd.van values are in the correct order.
+  arrange(Tijd.van) %>%
+  arrange(Date,  Coursecode) %>%
+  mutate(NextSession = lead(Tijd.van, 1)) %>%
+  mutate(NextDate = lead(Date, 1)) %>%
+  mutate(NextCourse = lead(Coursecode, 1)) %>%
+  mutate(Break = if_else(Date != NextDate | Coursecode != NextCourse, 0, abs(as.numeric(difftime(NextSession, Tijd.tot.en.met, units = "hours"))))) 
 
+UtwenteBreaksSummary <- UtwenteBreaks %>%
+  mutate(BreaksOver2Hours = if_else(Break >= 2, TRUE, FALSE)) %>%
+  group_by(Date, Coursecode) %>%
+  summarise(timesOver2Hours = length(BreaksOver2Hours[BreaksOver2Hours]))
 
-
-
-
-
+MoreThan2FreeHours <- length(UtwenteBreaksSummary$timesOver2Hours[UtwenteBreaksSummary$timesOver2Hours >= 2])
+percentageMoreThan2FreeHours <- (MoreThan2FreeHours / nrow(distinct(UtwenteBreaksSummary, Date))) * 100
+breakHours <- sum(UtwenteBreaks$Break, na.rm = TRUE)
+cat("Number of times the students participating in a course have breaks longer than 2 hours: ", MoreThan2FreeHours)
+cat("Number of break hours the students participating in a course have: ", breakHours)
+cat("Percentage of times the students participating in a course have breaks longer than 2 hours: ", percentageMoreThan2FreeHours)
 
 temp<- UtwenteActivity %>%
   filter(Coursecode < 10000000)
