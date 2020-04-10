@@ -193,6 +193,9 @@ UtwenteRoomActivity <- UtwenteActivity %>%
 UtwenteRoomActivity <- distinct(UtwenteRoomActivity, Tdiff, Date, Zaal.Activiteit, .keep_all = TRUE)
 
 agg2 <- aggregate(UtwenteRoomActivity$Tdiff, by=list(Date = UtwenteRoomActivity$Date, Room = UtwenteRoomActivity$Zaal.Activiteit), FUN = sum)
+agg2 <- agg2 %>%
+  group_by(Room) %>%
+  summarise(length)
 
 SaxionActivity <- read.xlsx("All timetabling activities SAX 2013-2015.xlsx", sheet = 1, startRow = 1, colNames = TRUE)
 SaxionCopy <- SaxionActivity
