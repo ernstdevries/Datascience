@@ -157,6 +157,10 @@ Mosthours <- data0 %>%
     mutate(OccupationPercentage = TimeOccupied / MaxOccup *100) %>%
     rename(Gebouw = Zaal.Activiteit)
     
+  ##Multiple the n() by 640 because unique dates * 8 gives this value. 
+  ##So there are 80 days where a room can be booked for 8 hours. For every room in a building we count
+  ## this room can be booked 640 times. Thats why n() is multipled by 640 for MaxOccupation
+  
   BuildingOccupation2014 <- Occupation2014 
   BuildingOccupation2014 <- BuildingOccupation2014 %>%
     mutate(Zaal.Activiteit = substr(sub("ZZ ",'',Occupation2014$Zaal.Activiteit),1,2)) %>%
