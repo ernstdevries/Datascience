@@ -387,7 +387,7 @@ cat("Percentage of times the students participating in a course have breaks long
 
 #----------------------------------------------------Utwente--------------------------------------------------------
 
-#Make a table containing 
+#Make a table containing information important for a time series analysis about the college hours and class sizes per month
 UtwenteTimeSeries <- UtwenteStudentCollegeHours %>%
   mutate(weekDay = wday(Date)) %>%
   mutate(calendarWeek = strftime(Date, "%V")) %>%
@@ -398,6 +398,7 @@ UtwenteTimeSeries <- UtwenteStudentCollegeHours %>%
   summarise(collegeHours = mean(collegeHours), ClassSize = mean(Size)) %>%
   arrange(year, month)
 
+#Plot the average college hours for each month in all years available in the data set 
 ggplot(subset(UtwenteTimeSeries, year == 2013), aes(month, collegeHours)) + geom_bar(stat="identity", fill="blue") +
   xlab("Month") + ylab("Average CollegeHours")+
   theme_minimal() + theme(axis.text.x = element_text(angle = 90))
@@ -418,9 +419,33 @@ ggplot(subset(UtwenteTimeSeries, year == 2017), aes(month, collegeHours)) + geom
   xlab("Month") + ylab("Average CollegeHours")+
   theme_minimal() + theme(axis.text.x = element_text(angle = 90))
 
+#Plot the average college hours for each year available in the data set 
 ggplot(UtwenteTimeSeries, aes(year, collegeHours)) + geom_bar(stat="identity", fill="blue") +
   xlab("Month") + ylab("Average CollegeHours")+
   theme_minimal() + theme(axis.text.x = element_text(angle = 90))
 
+#Plot the average college hours for each month in all years available in the data set 
+ggplot(subset(UtwenteTimeSeries, year == 2013), aes(month, ClassSize)) + geom_bar(stat="identity", fill="blue") +
+  xlab("Month") + ylab("Average Class Sizes")+
+  theme_minimal() + theme(axis.text.x = element_text(angle = 90))
 
-qplot(x = Date, y = collegeHours, data = UtwenteStudentCollegeHours, na.rm= TRUE )
+ggplot(subset(UtwenteTimeSeries, year == 2014), aes(month, ClassSize)) + geom_bar(stat="identity", fill="blue") +
+  xlab("Month") + ylab("Average Class Sizes")+
+  theme_minimal() + theme(axis.text.x = element_text(angle = 90))
+
+ggplot(subset(UtwenteTimeSeries, year == 2015), aes(month, ClassSize)) + geom_bar(stat="identity", fill="blue") +
+  xlab("Month") + ylab("Average Class Sizes")+
+  theme_minimal() + theme(axis.text.x = element_text(angle = 90))
+
+ggplot(subset(UtwenteTimeSeries, year == 2016), aes(month, ClassSize)) + geom_bar(stat="identity", fill="blue") +
+  xlab("Month") + ylab("Average Class Sizes")+
+  theme_minimal() + theme(axis.text.x = element_text(angle = 90))
+
+ggplot(subset(UtwenteTimeSeries, year == 2017), aes(month, ClassSize)) + geom_bar(stat="identity", fill="blue") +
+  xlab("Month") + ylab("Average Class Sizes")+
+  theme_minimal() + theme(axis.text.x = element_text(angle = 90))
+
+#Plot the average college hours for each year available in the data set 
+ggplot(UtwenteTimeSeries, aes(year, ClassSize)) + geom_bar(stat="identity", fill="blue") +
+  xlab("Month") + ylab("Average Class Size")+
+  theme_minimal() + theme(axis.text.x = element_text(angle = 90))
