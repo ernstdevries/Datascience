@@ -6,7 +6,7 @@ library(openxlsx)
 library(chron)
 library(tidyverse)
 library(ggplot2)
-
+library(zoo)
 
 #-------------------------Reading and cleaning the Utwente data------------------------------
 
@@ -386,17 +386,41 @@ cat("Percentage of times the students participating in a course have breaks long
 #---------------------------------------------------Time Series Analysis--------------------------------------------
 
 #----------------------------------------------------Utwente--------------------------------------------------------
+
+#Make a table containing 
 UtwenteTimeSeries <- UtwenteStudentCollegeHours %>%
   mutate(weekDay = wday(Date)) %>%
   mutate(calendarWeek = strftime(Date, "%V")) %>%
   mutate(year = year(Date)) %>%
-  group_by(Date,calendarWeek, year) %>%
+  drop_na(Date) %>%
+  mutate(month = format(as.Date(Date),format = "%Y/%m")) %>%
+  group_by(year, month) %>%
   summarise(collegeHours = mean(collegeHours), ClassSize = mean(Size)) %>%
-  arrange(year)
+  arrange(year, month)
 
-UtwenteTimeSeries %>%
-  ggplot(aes(as.Date(Date), collegeHours)) + geom_line() +
-  scale_x_date(date_breaks = "1 year") + xlab("Month") + ylab("CollegeHours")
+ggplot(subset(UtwenteTimeSeries, year == 2013), aes(month, collegeHours)) + geom_bar(stat="identity", fill="blue") +
+  xlab("Month") + ylab("Average CollegeHours")+
+  theme_minimal() + theme(axis.text.x = element_text(angle = 90))
+
+ggplot(subset(UtwenteTimeSeries, year == 2014), aes(month, collegeHours)) + geom_bar(stat="identity", fill="blue") +
+  xlab("Month") + ylab("Average CollegeHours")+
+  theme_minimal() + theme(axis.text.x = element_text(angle = 90))
+
+ggplot(subset(UtwenteTimeSeries, year == 2015), aes(month, collegeHours)) + geom_bar(stat="identity", fill="blue") +
+  xlab("Month") + ylab("Average CollegeHours")+
+  theme_minimal() + theme(axis.text.x = element_text(angle = 90))
+
+ggplot(subset(UtwenteTimeSeries, year == 2016), aes(month, collegeHours)) + geom_bar(stat="identity", fill="blue") +
+  xlab("Month") + ylab("Average CollegeHours")+
+  theme_minimal() + theme(axis.text.x = element_text(angle = 90))
+
+ggplot(subset(UtwenteTimeSeries, year == 2017), aes(month, collegeHours)) + geom_bar(stat="identity", fill="blue") +
+  xlab("Month") + ylab("Average CollegeHours")+
+  theme_minimal() + theme(axis.text.x = element_text(angle = 90))
+
+ggplot(UtwenteTimeSeries, aes(year, collegeHours)) + geom_bar(stat="identity", fill="blue") +
+  xlab("Month") + ylab("Average CollegeHours")+
+  theme_minimal() + theme(axis.text.x = element_text(angle = 90))
 
 
 qplot(x = Date, y = collegeHours, data = UtwenteStudentCollegeHours, na.rm= TRUE )
