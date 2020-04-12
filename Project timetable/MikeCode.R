@@ -381,6 +381,19 @@ cat("Percentage of times the students participating in a course have breaks long
 
 
 
+#---------------------------------------------------Exploration--------------------------------------------
+RankProgrammeByCollegeHours <- UtwenteActivity %>%
+  group_by(Programme) %>%
+  summarise(Tdiff = sum(Tdiff)) %>%
+  filter(Tdiff > 100) %>%
+  drop_na() %>%
+  arrange(desc(Tdiff))
+
+
+
+
+
+
 
 
 #---------------------------------------------------Time Series Analysis--------------------------------------------
@@ -426,26 +439,77 @@ ggplot(UtwenteTimeSeries, aes(year, collegeHours)) + geom_bar(stat="identity", f
 
 #Plot the average college hours for each month in all years available in the data set 
 ggplot(subset(UtwenteTimeSeries, year == 2013), aes(month, ClassSize)) + geom_bar(stat="identity", fill="blue") +
-  xlab("Month") + ylab("Average Class Sizes")+
+  xlab("Month") + ylab("Class Attendance")+
   theme_minimal() + theme(axis.text.x = element_text(angle = 90))
 
 ggplot(subset(UtwenteTimeSeries, year == 2014), aes(month, ClassSize)) + geom_bar(stat="identity", fill="blue") +
-  xlab("Month") + ylab("Average Class Sizes")+
+  xlab("Month") + ylab("Class Attendance")+
   theme_minimal() + theme(axis.text.x = element_text(angle = 90))
 
 ggplot(subset(UtwenteTimeSeries, year == 2015), aes(month, ClassSize)) + geom_bar(stat="identity", fill="blue") +
-  xlab("Month") + ylab("Average Class Sizes")+
+  xlab("Month") + ylab("Class Attendance")+
   theme_minimal() + theme(axis.text.x = element_text(angle = 90))
 
 ggplot(subset(UtwenteTimeSeries, year == 2016), aes(month, ClassSize)) + geom_bar(stat="identity", fill="blue") +
-  xlab("Month") + ylab("Average Class Sizes")+
+  xlab("Month") + ylab("Class Attendance")+
   theme_minimal() + theme(axis.text.x = element_text(angle = 90))
 
 ggplot(subset(UtwenteTimeSeries, year == 2017), aes(month, ClassSize)) + geom_bar(stat="identity", fill="blue") +
-  xlab("Month") + ylab("Average Class Sizes")+
+  xlab("Month") + ylab("Class Attendance")+
   theme_minimal() + theme(axis.text.x = element_text(angle = 90))
 
 #Plot the average college hours for each year available in the data set 
 ggplot(UtwenteTimeSeries, aes(year, ClassSize)) + geom_bar(stat="identity", fill="blue") +
-  xlab("Month") + ylab("Average Class Size")+
+  xlab("Month") + ylab("Class Attendance")+
   theme_minimal() + theme(axis.text.x = element_text(angle = 90))
+
+#Now also include Programme information for the time series analysis
+UtwenteTimeSeries2 <- UtwenteStudentCollegeHours %>%
+  mutate(weekDay = wday(Date)) %>%
+  mutate(calendarWeek = strftime(Date, "%V")) %>%
+  mutate(year = year(Date)) %>%
+  drop_na(Date) %>%
+  mutate(month = format(as.Date(Date),format = "%Y/%m")) %>%
+  group_by(year, month, Programme) %>%
+  summarise(collegeHours = mean(collegeHours), ClassSize = mean(Size)) %>%
+  arrange(year, month, Programme)
+
+#Get the top 10 programmes with the highest count of college hours
+Top10ProgrammesHighestCollegeHours <- RankProgrammeByCollegeHours %>%
+  top_n(n = 10, wt = Tdiff)
+
+#Filter the time series so that only entries belonging to the top 10 programmes remain
+UtwenteTimeSeriesTopCollegeHours <- UtwenteTimeSeries2 %>%   
+  filter(Programme %in% Top10ProgrammesHighestCollegeHours$Programme)
+
+#Make plots for each month in each year containing the average college hours for the top 10 programmes with the highest count in college hours
+ggplot(subset(UtwenteTimeSeriesTopCollegeHours, year == 2013), aes(month, collegeHours, fill=Programme)) + geom_bar(stat="identity") +
+  xlab("Month") + ylab("Average College Hours")+
+  theme_minimal() + theme(axis.text.x = element_text(angle = 90)) +
+  ggtitle("Top 10 College Hour Programmes")
+
+ggplot(subset(UtwenteTimeSeriesTopCollegeHours, year == 2014), aes(month, collegeHours, fill=Programme)) + geom_bar(stat="identity") +
+  xlab("Month") + ylab("Average College Hours")+
+  theme_minimal() + theme(axis.text.x = element_text(angle = 90)) +
+  ggtitle("Top 10 College Hour Programmes")
+
+ggplot(subset(UtwenteTimeSeriesTopCollegeHours, year == 2015), aes(month, collegeHours, fill=Programme)) + geom_bar(stat="identity") +
+  xlab("Month") + ylab("Average College Hours")+
+  theme_minimal() + theme(axis.text.x = element_text(angle = 90)) +
+  ggtitle("Top 10 College Hour Programmes")
+
+ggplot(subset(UtwenteTimeSeriesTopCollegeHours, year == 2016), aes(month, collegeHours, fill=Programme)) + geom_bar(stat="identity") +
+  xlab("Month") + ylab("Average College Hours")+
+  theme_minimal() + theme(axis.text.x = element_text(angle = 90)) +
+  ggtitle("Top 10 College Hour Programmes")
+
+ggplot(subset(UtwenteTimeSeriesTopCollegeHours, year == 2017), aes(month, collegeHours, fill=Programme)) + geom_bar(stat="identity") +
+  xlab("Month") + ylab("Average College Hours")+
+  theme_minimal() + theme(axis.text.x = element_text(angle = 90)) +
+  ggtitle("Top 10 College Hour Programmes")
+
+#Do the same as before, now just containing all years in one plot
+ggplot(UtwenteTimeSeriesTopCollegeHours, aes(year, collegeHours, fill=Programme)) + geom_bar(stat="identity") +
+  xlab("Month") + ylab("Average College Hours")+
+  theme_minimal() + theme(axis.text.x = element_text(angle = 90)) +
+  ggtitle("Top 10 College Hour Programmes")
