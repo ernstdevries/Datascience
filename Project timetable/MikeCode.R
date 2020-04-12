@@ -58,11 +58,12 @@ data5 <- data5 %>%
 #Based on the study programme abbreviation column join the activity data with the study programmes data, so
 #that there are now also the column containing the full programme name for each activity.
 UtwenteActivity <- data5 %>%
-  full_join(data4, by = c("Programme" = "Abbreviation")) %>%
-  distinct(Tijd.van, Coursecode, Date, .keep_all = TRUE) # Remove unnecessary duplicates
+  full_join(data4, by = c("Programme" = "Abbreviation"))  # Remove unnecessary duplicates
 
 
-
+UtwenteActivity <- UtwenteActivity %>%
+  distinct(Tijd.van, Date, Beschrijving.Activiteit,  .keep_all = TRUE) %>%
+  mutate(level = if_else(str_detect(Naam.Activiteit, " M ") | str_detect(Naam.Activiteit, " M\\d "), "Master", "Bachelor")) 
 
 
 
@@ -114,13 +115,10 @@ cat("Percentage of times the students participating in a study programme have br
 #than 6 hours, reflecting the KPI's that were determined.
 UtwenteStudentContactHours <- UtwenteActivity %>%
   group_by(Date, Programme) %>%
-  summarise(contact_hours = sum(Tdiff, na.rm = TRUE), Size = sum(Size, na.rm = TRUE)) %>%
-  filter(Size != 0) %>%
+  summarise(contact_hours = sum(Tdiff), Size = sum(Size)) %>%
   filter(contact_hours != 0) %>%
   mutate(contact_hours_below_4_hours = if_else(contact_hours < 4, TRUE, FALSE)) %>%
   mutate(contact_hours_above_6_hours = if_else(contact_hours > 6, TRUE, FALSE))
-
-levels(data5$Activity)
 
 #Get  the percentage of times student that have contact hours below 4 hours
 countBelow4 <- sum(UtwenteStudentContactHours$contact_hours_below_4_hours)
@@ -133,7 +131,7 @@ cat("Percentage of times student with less than 4 contact hours per day for all 
 countAbove6 <- sum(UtwenteStudentContactHours$contact_hours_above_6_hours)
 percentageAbove6 <- (countAbove6 / length(UtwenteStudentContactHours$contact_hours_above_6_hours)) * 100
 #cat("Number of student with more than 6 contact hours per day for all days where there are classes: ", countAbove6)
-cat("Percentage of timesbstudent with more than 6 contact hours per day for all days where there are classes: ", percentageAbove6)
+cat("Percentage of times student with more than 6 contact hours per day for all days where there are classes: ", percentageAbove6)
 
 
 #---------------------------------------------Utwente Student College Hours-------------------------------------
@@ -146,8 +144,7 @@ cat("Percentage of timesbstudent with more than 6 contact hours per day for all 
 UtwenteStudentCollegeHours <- UtwenteActivity %>%
   group_by(Date, Programme) %>%
   summarise(latestClass = max(Tijd.tot.en.met, na.rm = TRUE),earliestClass = min(Tijd.van, na.rm = TRUE), Size = sum(Size, na.rm = TRUE)) %>%
-  filter(Size != 0) %>%
-  mutate(latestTime = latestClass + 6300) %>%
+    mutate(latestTime = latestClass + 6300) %>%
   mutate(collegeHours = difftime(latestClass,earliestClass , units = "hours")) %>%
   filter(collegeHours != 0) %>%
   mutate(college_hours_over_8.15 = if_else(collegeHours > 8.15, TRUE, FALSE)) %>%
@@ -196,8 +193,7 @@ UtwenteTeacherActivity <- UtwenteActivity %>%
 
 #Make a new table for the teachers that includes only filtered information with unnecessay information excluded
 UtwenteTeacherContactHours <- UtwenteTeacherActivity %>%
-  select(`Teacher-lastname`, Date, Size, Tdiff, Tijd.van, Tijd.tot.en.met) %>%
-  filter(Size != 0)%>% # Classes with group size 0 should not be included
+  select(`Teacher-lastname`, Date, Size, Tdiff, Tijd.van, Tijd.tot.en.met) %>% # Classes with group size 0 should not be included
   filter(Tdiff != 0)%>% # Class duration of 0 should also not be included
   filter(!is.na(`Teacher-lastname`)) # Missing teacher entries should be filtered out
 
@@ -382,6 +378,7 @@ cat("Percentage of times the students participating in a course have breaks long
 
 
 #---------------------------------------------------Exploration--------------------------------------------
+#Rank the study programmes by total number of college hours
 RankProgrammeByCollegeHours <- UtwenteActivity %>%
   group_by(Programme) %>%
   summarise(Tdiff = sum(Tdiff)) %>%
@@ -389,7 +386,13 @@ RankProgrammeByCollegeHours <- UtwenteActivity %>%
   drop_na() %>%
   arrange(desc(Tdiff))
 
-
+#Rank the study programmes by class size
+RankProgrammeByClassSize <-UtwenteActivity %>%
+  group_by(Programme) %>%
+  summarise(Size = sum(Size)) %>%
+  filter (Size != 0) %>%
+  drop_na %>%
+  arrange(desc(Size))
 
 
 
@@ -405,7 +408,7 @@ UtwenteTimeSeries <- UtwenteStudentCollegeHours %>%
   mutate(weekDay = wday(Date)) %>%
   mutate(calendarWeek = strftime(Date, "%V")) %>%
   mutate(year = year(Date)) %>%
-  drop_na(Date) %>%
+  drop_na() %>%
   mutate(month = format(as.Date(Date),format = "%Y/%m")) %>%
   group_by(year, month) %>%
   summarise(collegeHours = mean(collegeHours), ClassSize = mean(Size)) %>%
@@ -464,7 +467,7 @@ ggplot(UtwenteTimeSeries, aes(year, ClassSize)) + geom_bar(stat="identity", fill
   theme_minimal() + theme(axis.text.x = element_text(angle = 90))
 
 #Now also include Programme information for the time series analysis
-UtwenteTimeSeries2 <- UtwenteStudentCollegeHours %>%
+UtwenteTimeSeries2 <- UtwenteActivity %>%
   mutate(weekDay = wday(Date)) %>%
   mutate(calendarWeek = strftime(Date, "%V")) %>%
   mutate(year = year(Date)) %>%
@@ -510,6 +513,47 @@ ggplot(subset(UtwenteTimeSeriesTopCollegeHours, year == 2017), aes(month, colleg
 
 #Do the same as before, now just containing all years in one plot
 ggplot(UtwenteTimeSeriesTopCollegeHours, aes(year, collegeHours, fill=Programme)) + geom_bar(stat="identity") +
+  xlab("Month") + ylab("Average College Hours")+
+  theme_minimal() + theme(axis.text.x = element_text(angle = 90)) +
+  ggtitle("Top 10 College Hour Programmes")
+
+#Get the top 10 programmes with the biggest class sizes over all years
+Top10ProgrammesHighestClassSizes <- RankProgrammeByClassSize %>%
+  top_n(n = 10, wt = Size)
+
+#Filter the time series so that only entries belonging to the top 10 programmes remain
+UtwenteTimeSeriesTopClassSizes <- UtwenteTimeSeries2 %>%   
+  filter(Programme %in% Top10ProgrammesHighestClassSizes$Programme) %>%
+  drop_na()
+
+#Make plots for each month in each year containing the class attendance for the top 10 programmes with the highest count in college hours
+ggplot(subset(UtwenteTimeSeriesTopClassSizes, year == 2013), aes(month,ClassSize, fill=Programme)) + geom_bar(stat="identity") +
+  xlab("Month") + ylab("Class Attendance")+
+  theme_minimal() + theme(axis.text.x = element_text(angle = 90)) +
+  ggtitle("Top 10 College Hour Programmes")
+
+ggplot(subset(UtwenteTimeSeriesTopClassSizes, year == 2014), aes(month, ClassSize, fill=Programme)) + geom_bar(stat="identity") +
+  xlab("Month") + ylab("Average College Hours")+
+  theme_minimal() + theme(axis.text.x = element_text(angle = 90)) +
+  ggtitle("Top 10 College Hour Programmes")
+
+ggplot(subset(UtwenteTimeSeriesTopClassSizes, year == 2015), aes(month, ClassSize, fill=Programme)) + geom_bar(stat="identity") +
+  xlab("Month") + ylab("Average College Hours")+
+  theme_minimal() + theme(axis.text.x = element_text(angle = 90)) +
+  ggtitle("Top 10 College Hour Programmes")
+
+ggplot(subset(UtwenteTimeSeriesTopClassSizes, year == 2016), aes(month, ClassSize, fill=Programme)) + geom_bar(stat="identity") +
+  xlab("Month") + ylab("Average College Hours")+
+  theme_minimal() + theme(axis.text.x = element_text(angle = 90)) +
+  ggtitle("Top 10 College Hour Programmes")
+
+ggplot(subset(UtwenteTimeSeriesTopClassSizes, year == 2017), aes(month, ClassSize, fill=Programme)) + geom_bar(stat="identity") +
+  xlab("Month") + ylab("Average College Hours")+
+  theme_minimal() + theme(axis.text.x = element_text(angle = 90)) +
+  ggtitle("Top 10 College Hour Programmes")
+
+#Do the same as before, now just containing all years in one plot
+ggplot(UtwenteTimeSeriesTopClassSizes, aes(year, ClassSize, fill=Programme)) + geom_bar(stat="identity") +
   xlab("Month") + ylab("Average College Hours")+
   theme_minimal() + theme(axis.text.x = element_text(angle = 90)) +
   ggtitle("Top 10 College Hour Programmes")
