@@ -6,6 +6,9 @@ library(openxlsx)
 library(chron)
 library(tidyverse)
 
+
+#-------------------------Reading and cleaning the Utwente data------------------------------
+
 data0 <-read_delim(file="Activiteitenoverzicht_2013-2014_v2.csv", delim=",", col_names = TRUE, locale = locale(encoding = 'LATIN1'))
 data1 <-read_delim(file="Activiteitenoverzicht_2014-2015_v2.csv", delim=",", col_names = TRUE, locale = locale(encoding = 'LATIN1'))
 data2 <-read_delim(file="Activiteitenoverzicht_2015-2016_v2.csv", delim=",", col_names = TRUE, locale = locale(encoding = 'LATIN1'))
@@ -57,6 +60,10 @@ UtwenteActivity <- data5 %>%
   full_join(data4, by = c("Programme" = "Abbreviation")) %>%
   distinct(Tijd.van, Coursecode, Date, .keep_all = TRUE)
 
+
+
+#--------------------------------------Utwente Student Break KPI-------------------------------------
+
 UtwenteBreaks <- UtwenteActivity %>%
   #2 times arrange after each other is necessary. If only the second arrange is used it could be that for each course on each day
   #the sessions are still not ordered correctly. For example in Tijd.van the first session starts at 10:30 while the second session
@@ -84,6 +91,10 @@ cat("Percentage of times the students participating in a course have breaks long
 temp<- UtwenteActivity %>%
   filter(Coursecode < 10000000)
 
+
+#-----------------------------Utwente Student Contact Hours---------------------------------
+
+
 #Create a new table containing the contact hours the student have with the teacher on each date grouped by 
 #study programme. Add new columns indicating whether the number of contact hours is below 4 hours or more
 #than 6 hours, reflecting the KPI's that were determined.
@@ -109,6 +120,13 @@ countAbove6 <- sum(UtwenteStudentContactHours$contact_hours_above_6_hours)
 percentageAbove6 <- (countAbove6 / length(UtwenteStudentContactHours$contact_hours_above_6_hours)) * 100
 cat("Number of student with more than 6 contact hours per day for all days where there are classes: ", countAbove6)
 cat("Percentage of student with more than 6 contact hours per day for all days where there are classes: ", percentageAbove6)
+
+
+
+
+
+#---------------------------------------------Utwente Student College Hours-------------------------------------
+
 
 #Make a new table with the college hours of each student by taking the difference between the end of the last session -
 #the start of the first session for each day by study programme
@@ -145,6 +163,14 @@ cat("Percentage of student with classes on friday and the last hours out of all 
 
 data6 <-read_excel("UT_courses_Osiris_with_teacher_2013-2014.xlsx", col_names = TRUE, col_types = NULL, skip = 3)
 data7 <-read_excel("UT_courses_Osiris_with_teacher_2014-2015.xlsx", col_names = TRUE, col_types = NULL, skip = 3)
+
+
+
+
+
+
+#-----------------------------------Utwente Teacher Working Hours KPIS---------------------------------
+
 
 #Append the Utwente teacher data into one table
 UtwenteCourses <- rbind(data6, data7) 
@@ -184,6 +210,10 @@ percentageTeacherFirstAndLast <- (countTeacherFirstAndLast / length(UtwenteTeach
 cat("Number of times teachers have classes on the first and last hours: ", countTeacherFirstAndLast)
 cat("Percentage of times teachers have classes on the first and last hours: ", percentageTeacherFirstAndLast)
 
+
+
+#-------------------------------------Utwente Room Occupation-------------------------------
+
 UtwenteRoomActivity <- UtwenteActivity %>%
   filter(Size != 0)%>%
   filter(Tdiff != 0)%>%
@@ -193,9 +223,11 @@ UtwenteRoomActivity <- UtwenteActivity %>%
 UtwenteRoomActivity <- distinct(UtwenteRoomActivity, Tdiff, Date, Zaal.Activiteit, .keep_all = TRUE)
 
 agg2 <- aggregate(UtwenteRoomActivity$Tdiff, by=list(Date = UtwenteRoomActivity$Date, Room = UtwenteRoomActivity$Zaal.Activiteit), FUN = sum)
-agg2 <- agg2 %>%
-  group_by(Room) %>%
-  summarise(length)
+
+
+
+#-------------------------------Reading and Cleaning Saxion Data--------------------------------------
+
 
 SaxionActivity <- read.xlsx("All timetabling activities SAX 2013-2015.xlsx", sheet = 1, startRow = 1, colNames = TRUE)
 SaxionCopy <- SaxionActivity
@@ -218,7 +250,8 @@ SaxionCopy <- SaxionCopy %>%
   #mutate(contact_hours_below_4_hours = if_else(contact_hours < 4, TRUE, FALSE)) %>%
   #mutate(contact_hours_above_6_hours = if_else(contact_hours > 6, TRUE, FALSE))
 
-SaxionStudents <- SaxionCopy
+SaxionStudents <- SaxionCopy %>%
+  
 
 levels(SaxionStudents$ACTIVITY)
 
