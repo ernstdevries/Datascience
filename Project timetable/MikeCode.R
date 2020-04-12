@@ -5,6 +5,7 @@ library(readxl)
 library(openxlsx)
 library(chron)
 library(tidyverse)
+library(ggplot2)
 
 
 #-------------------------Reading and cleaning the Utwente data------------------------------
@@ -59,6 +60,18 @@ data5 <- data5 %>%
 UtwenteActivity <- data5 %>%
   full_join(data4, by = c("Programme" = "Abbreviation")) %>%
   distinct(Tijd.van, Coursecode, Date, .keep_all = TRUE) # Remove unnecessary duplicates
+
+
+
+
+
+
+
+#-----------------------------------------------KPI-------------------------------------------------
+
+
+
+
 
 
 
@@ -123,9 +136,6 @@ percentageAbove6 <- (countAbove6 / length(UtwenteStudentContactHours$contact_hou
 cat("Percentage of timesbstudent with more than 6 contact hours per day for all days where there are classes: ", percentageAbove6)
 
 
-
-
-
 #---------------------------------------------Utwente Student College Hours-------------------------------------
 
 
@@ -169,10 +179,6 @@ cat("Percentage of times student with classes on friday and the last hours out o
 #Read the teacher data
 data6 <-read_excel("UT_courses_Osiris_with_teacher_2013-2014.xlsx", col_names = TRUE, col_types = NULL, skip = 3)
 data7 <-read_excel("UT_courses_Osiris_with_teacher_2014-2015.xlsx", col_names = TRUE, col_types = NULL, skip = 3)
-
-
-
-
 
 
 #-----------------------------------Utwente Teacher Working Hours KPIS---------------------------------
@@ -226,7 +232,6 @@ percentageTeacherFirstAndLast <- (countTeacherFirstAndLast / length(UtwenteTeach
 cat("Percentage of times teachers have classes on the first and last hours: ", percentageTeacherFirstAndLast)
 
 
-
 #-------------------------------------Utwente Room Occupation-------------------------------
 
 #Make a new table containing only relevat filtered information about th rooms used for classes
@@ -241,7 +246,6 @@ UtwenteRoomActivity <- distinct(UtwenteRoomActivity, Tdiff, Date, Zaal.Activitei
 
 #Give the class length for each class on each day
 agg2 <- aggregate(UtwenteRoomActivity$Tdiff, by=list(Date = UtwenteRoomActivity$Date, Room = UtwenteRoomActivity$Zaal.Activiteit), FUN = sum)
-
 
 
 #-------------------------------Reading and Cleaning Saxion Data--------------------------------------
@@ -369,3 +373,30 @@ breakHours <- sum(SaxionBreak$Break, na.rm = TRUE)
 #cat("Number of times the students participating in a course have breaks longer than 2 hours: ", MoreThan2FreeHours)
 #cat("Number of break hours the students participating in a course have: ", breakHours)
 cat("Percentage of times the students participating in a course have breaks longer than 2 hours: ", percentageMoreThan2FreeHours)
+
+
+
+
+
+
+
+
+
+
+#---------------------------------------------------Time Series Analysis--------------------------------------------
+
+#----------------------------------------------------Utwente--------------------------------------------------------
+UtwenteTimeSeries <- UtwenteStudentCollegeHours %>%
+  mutate(weekDay = wday(Date)) %>%
+  mutate(calendarWeek = strftime(Date, "%V")) %>%
+  mutate(year = year(Date)) %>%
+  group_by(Date,calendarWeek, year) %>%
+  summarise(collegeHours = mean(collegeHours), ClassSize = mean(Size)) %>%
+  arrange(year)
+
+UtwenteTimeSeries %>%
+  ggplot(aes(as.Date(Date), collegeHours)) + geom_line() +
+  scale_x_date(date_breaks = "1 year") + xlab("Month") + ylab("CollegeHours")
+
+
+qplot(x = Date, y = collegeHours, data = UtwenteStudentCollegeHours, na.rm= TRUE )
