@@ -50,7 +50,7 @@ data5 <- data5 %>%
   select(-c(Grootte)) %>%
   mutate(Coursecode = as.numeric(Cursus)) %>%
   select(-c(Cursus)) %>%
-  filter(Coursecode > 10000000) %>% #Remove invalid course coded like "2" for example
+  #filter(Coursecode > 10000000) %>% #Remove invalid course coded like "2" for example
   mutate(Programme = gsub( " .*$", "", Naam.Activiteit )) %>% #Get the abbreviations and put them into a seperate column. Late used to join with abbreviations excel file
   mutate(Activity = as.factor(Activiteitstype)) %>%
   select(-c(Activiteitstype))
@@ -62,8 +62,37 @@ UtwenteActivity <- data5 %>%
 
 
 UtwenteActivity <- UtwenteActivity %>%
-  distinct(Tijd.van, Date, Beschrijving.Activiteit,  .keep_all = TRUE) %>%
-  mutate(level = if_else(str_detect(Naam.Activiteit, " M ") | str_detect(Naam.Activiteit, " M\\d "), "Master", "Bachelor")) 
+  mutate(level = if_else(str_detect(Naam.Activiteit, " M ") | str_detect(Naam.Activiteit, " M\\d ") | str_detect(Naam.Activiteit, " M. ") , "Master", "Bachelor"))# %>%
+  #mutate(Byear1 = if_else)
+
+UtwenteActivity <- UtwenteActivity %>%
+  mutate(Byear1= if_else(str_detect(Naam.Activiteit, regex(" B1 ", ignore_case = TRUE)) | str_detect(Naam.Activiteit, regex(" MOD01 ", ignore_case = TRUE)) | str_detect(Naam.Activiteit, regex(" MOD1 ", ignore_case = TRUE))| str_detect(Naam.Activiteit, regex(" MOD02 ", ignore_case = TRUE) )| str_detect(Naam.Activiteit, regex(" MOD2 ", ignore_case = TRUE))| str_detect(Naam.Activiteit, regex(" MOD03 ", ignore_case = TRUE)) | str_detect(Naam.Activiteit, regex(" MOD3 ", ignore_case = TRUE))| str_detect(Naam.Activiteit, regex(" MOD04 ", ignore_case = TRUE) )| str_detect(Naam.Activiteit, regex(" MOD4 ", ignore_case = TRUE)), TRUE,FALSE)) %>%
+  mutate(Byear2= if_else(str_detect(Naam.Activiteit, regex(" B2 ", ignore_case = TRUE)) | str_detect(Naam.Activiteit, regex(" MOD05 ", ignore_case = TRUE)) | str_detect(Naam.Activiteit, regex(" MOD5 ", ignore_case = TRUE))| str_detect(Naam.Activiteit, regex(" MOD06 ", ignore_case = TRUE) )| str_detect(Naam.Activiteit, regex(" MOD6 ", ignore_case = TRUE))| str_detect(Naam.Activiteit, regex(" MOD07 ", ignore_case = TRUE)) | str_detect(Naam.Activiteit, regex(" MOD7 ", ignore_case = TRUE))| str_detect(Naam.Activiteit, regex(" MOD08 ", ignore_case = TRUE) )| str_detect(Naam.Activiteit, regex(" MOD8 ", ignore_case = TRUE)), TRUE,FALSE)) %>%
+  mutate(Byear3= if_else(str_detect(Naam.Activiteit, regex(" B3 ", ignore_case = TRUE)) | str_detect(Naam.Activiteit, regex(" MOD09 ", ignore_case = TRUE)) | str_detect(Naam.Activiteit, regex(" MOD9 ", ignore_case = TRUE))| str_detect(Naam.Activiteit, regex(" MOD10 ", ignore_case = TRUE) )| str_detect(Naam.Activiteit, regex(" MOD10 ", ignore_case = TRUE))| str_detect(Naam.Activiteit, regex(" MOD011 ", ignore_case = TRUE)) | str_detect(Naam.Activiteit, regex(" MOD11 ", ignore_case = TRUE))| str_detect(Naam.Activiteit, regex(" MOD012 ", ignore_case = TRUE) )| str_detect(Naam.Activiteit, regex(" MOD12 ", ignore_case = TRUE)), TRUE,FALSE)) %>%
+  mutate(Byear4= if_else(str_detect(Naam.Activiteit, regex(" B4 ", ignore_case = TRUE)) | str_detect(Naam.Activiteit, regex(" MOD013 ", ignore_case = TRUE)) | str_detect(Naam.Activiteit, regex(" MOD13 ", ignore_case = TRUE))| str_detect(Naam.Activiteit, regex(" MOD014 ", ignore_case = TRUE) )| str_detect(Naam.Activiteit, regex(" MOD14 ", ignore_case = TRUE))| str_detect(Naam.Activiteit, regex(" MOD015 ", ignore_case = TRUE)) | str_detect(Naam.Activiteit, regex(" MOD15 ", ignore_case = TRUE))| str_detect(Naam.Activiteit, regex(" MOD016 ", ignore_case = TRUE) )| str_detect(Naam.Activiteit, regex(" MOD16 ", ignore_case = TRUE)), TRUE,FALSE)) %>%
+  mutate(years = if_else(Byear1 == TRUE, "b1", "")) %>%
+  transform(years = if_else(Byear2 == TRUE, "b2", years))%>%
+  transform(years = if_else(Byear3 == TRUE, "b3", years))%>%
+  transform(years = if_else(Byear4 == TRUE, "b4", years))
+
+UtwenteActivity <- UtwenteActivity %>%
+  mutate(Myear2 = if_else(level == "Master" & str_detect(Naam.Activiteit, regex(" M2 ", ignore_case = TRUE)), TRUE, FALSE)) %>%
+  filter(!str_detect(Naam.Activiteit, regex(" M3 ", ignore_case = TRUE))) %>%
+  mutate(Myear1 = if_else(level == "Master" & Myear2 == FALSE, TRUE, FALSE)) %>%
+  transform(years = if_else(Myear1 == TRUE, "m1", years)) %>%
+  transform(years = if_else(Myear2 == TRUE, "m2", years)) %>%
+  transform(years = if_else(years == "", "Remove", years)) %>%
+  filter(years != "Remove") %>%
+  drop_na(Date) %>%
+  distinct(Tijd.van, years, Programme,  .keep_all = TRUE)
+
+Dates <- UtwenteActivity %>%
+  select(Date)%>%
+  distinct(Date)
+
+print(nrow(Dates))
+numberDays <- nrow(Dates)
+
 
 
 
@@ -86,25 +115,26 @@ UtwenteBreaks <- UtwenteActivity %>%
   #starts at 8:45, even though they are on the same day for the same course. Because of this, before this arrange is used, another arrange
   #is used to ensure that all Tijd.van values are in the correct order.
   arrange(Tijd.van, Coursecode) %>%
-  arrange(Date,  Programme) %>%
+  arrange(Date,  Programme, years) %>%
+  mutate(Nextyear = lead(years, 1)) %>%
   mutate(NextSession = lead(Tijd.van, 1)) %>% #Put the start of the next session into a seperate column. For calculating breaks inbetween them.
   mutate(NextDate = lead(Date, 1)) %>% #Put the date of the next entry in a seperate column. Break is only calculated if next entry is on the same day.
   mutate(NextCourse = lead(Programme, 1)) %>% #Get the programme the next entry is belonging to and put it into a column. Breaks are only calculated per study programme.
-  mutate(Break = if_else(Date != NextDate | Programme != NextCourse, 0, abs(as.numeric(difftime(NextSession, Tijd.tot.en.met, units = "hours"))))) 
+  mutate(Break = if_else(Date != NextDate | Programme != NextCourse | Nextyear != years, 0, abs(as.numeric(difftime(NextSession, Tijd.tot.en.met, units = "hours"))))) 
 
 #Make a new table containing information about the breaks for each programme per day.
 UtwenteBreaksSummary <- UtwenteBreaks %>%
   mutate(BreaksOver2Hours = if_else(Break >= 2, TRUE, FALSE)) %>%
-  group_by(Date, Programme) %>%
+  group_by(Date, Programme, years) %>%
   summarise(timesOver2Hours = length(BreaksOver2Hours[BreaksOver2Hours]))
 
 #Get the percentage of times a study programme has more than 2 hours break per day
-MoreThan2FreeHours <- length(UtwenteBreaksSummary$timesOver2Hours[UtwenteBreaksSummary$timesOver2Hours >= 2])
+MoreThan2FreeHours <- length(UtwenteBreaksSummary$timesOver2Hours[UtwenteBreaksSummary$timesOver2Hours > 0])
 percentageMoreThan2FreeHours <- (MoreThan2FreeHours / length(UtwenteBreaksSummary$timesOver2Hours)) * 100
 breakHours <- sum(UtwenteBreaks$Break, na.rm = TRUE)
-#cat("Number of times the students participating in a course have breaks longer than 2 hours: ", MoreThan2FreeHours)
-#cat("Number of break hours the students participating in a course have: ", breakHours)
-cat("Percentage of times the students participating in a study programme have breaks longer than 2 hours: ", percentageMoreThan2FreeHours)
+cat("Number of days a study cohort participating in a course have breaks longer than 2 hours: ", MoreThan2FreeHours)
+cat("Number of break hours the students participating in a course have: ", breakHours)
+cat("Percentage of days a study cohort participating in a study programme have breaks longer than 2 hours: ", percentageMoreThan2FreeHours)
 
 
 #-----------------------------Utwente Student Contact Hours---------------------------------
@@ -114,7 +144,7 @@ cat("Percentage of times the students participating in a study programme have br
 #study programme. Add new columns indicating whether the number of contact hours is below 4 hours or more
 #than 6 hours, reflecting the KPI's that were determined.
 UtwenteStudentContactHours <- UtwenteActivity %>%
-  group_by(Date, Programme) %>%
+  group_by(Date, Programme, years) %>%
   summarise(contact_hours = sum(Tdiff), Size = sum(Size)) %>%
   filter(contact_hours != 0) %>%
   mutate(contact_hours_below_4_hours = if_else(contact_hours < 4, TRUE, FALSE)) %>%
@@ -123,15 +153,14 @@ UtwenteStudentContactHours <- UtwenteActivity %>%
 #Get  the percentage of times student that have contact hours below 4 hours
 countBelow4 <- sum(UtwenteStudentContactHours$contact_hours_below_4_hours)
 percentageBelow4 <- (countBelow4 / length(UtwenteStudentContactHours$contact_hours_below_4_hours)) * 100
-print(length(UtwenteStudentContactHours$contact_hours_below_4_hours))
-#cat("Number of student with less than 4 contact hours per day for all days where there are classes: ", countBelow4)
-cat("Percentage of times student with less than 4 contact hours per day for all days where there are classes: ", percentageBelow4)
+cat("Number of days a programme cohort had less than 4 contact hours per day for all days where there are classes: ", countBelow4)
+cat("Percentage of days a programme cohort had less than 4 contact hours per day for all days where there are classes: ", percentageBelow4)
 
 #Get the percentage of times student that have contact hours over 6 hours
 countAbove6 <- sum(UtwenteStudentContactHours$contact_hours_above_6_hours)
 percentageAbove6 <- (countAbove6 / length(UtwenteStudentContactHours$contact_hours_above_6_hours)) * 100
 #cat("Number of student with more than 6 contact hours per day for all days where there are classes: ", countAbove6)
-cat("Percentage of times student with more than 6 contact hours per day for all days where there are classes: ", percentageAbove6)
+cat("Percentage of days a programme cohort more than 6 contact hours per day for all days where there are classes: ", percentageAbove6)
 
 
 #---------------------------------------------Utwente Student College Hours-------------------------------------
@@ -142,12 +171,12 @@ cat("Percentage of times student with more than 6 contact hours per day for all 
 #students at the university whereas contact hours are defined as time students spent in classes. College hours also include
 #breaks. Also make column for times student have classes on fridays at the last hours.
 UtwenteStudentCollegeHours <- UtwenteActivity %>%
-  group_by(Date, Programme) %>%
+  group_by(Date, Programme, years) %>%
   summarise(latestClass = max(Tijd.tot.en.met, na.rm = TRUE),earliestClass = min(Tijd.van, na.rm = TRUE), Size = sum(Size, na.rm = TRUE)) %>%
     mutate(latestTime = latestClass + 6300) %>%
   mutate(collegeHours = difftime(latestClass,earliestClass , units = "hours")) %>%
   filter(collegeHours != 0) %>%
-  mutate(college_hours_over_8.15 = if_else(collegeHours > 8.15, TRUE, FALSE)) %>%
+  mutate(college_hours_over_8.75 = if_else(collegeHours > 8.75, TRUE, FALSE)) %>%
   mutate(lastHour = if_else(hour(latestClass) == 15, TRUE, FALSE)) %>%
   mutate(firstHour = if_else(hour(earliestClass) == 8, TRUE, FALSE)) %>%
   mutate(lastAndFirst = if_else(lastHour == TRUE & firstHour == TRUE, TRUE, FALSE)) %>%
@@ -156,10 +185,10 @@ UtwenteStudentCollegeHours <- UtwenteActivity %>%
   mutate(fridayAndEveningClasses = if_else(classesOnFriday == TRUE & hour(latestClass) == 15, TRUE, FALSE))
 
 #Get the percentage of times student that have college hours over 8.15 hours
-countAbove815 <- sum(UtwenteStudentCollegeHours$college_hours_over_8.15)
-percentageAbove815 <- (countAbove815 / (nrow(distinct(distinct(UtwenteStudentCollegeHours, Programme)[1])) * nrow(distinct(UtwenteStudentCollegeHours, Date)))) * 100
+countAbove815 <- sum(UtwenteStudentCollegeHours$college_hours_over_8.75)
+percentageAbove815 <- (countAbove815 / length(UtwenteStudentCollegeHours$college_hours_over_8.75)) * 100
 #cat("Number of student with more than 8.15 college hours per day: ", countAbove815)
-cat("Percentage of times student with more than 8.15 college hours per day: ", percentageAbove815)
+cat("Percentage of days a study cohort with more than 8.75 college hours per day: ", percentageAbove815)
 
 #Get the percentage of times students have classes on the first as well as the last hours
 countFirstAndLast <- length(UtwenteStudentCollegeHours$lastAndFirst[UtwenteStudentCollegeHours$lastAndFirst == TRUE])
