@@ -370,52 +370,50 @@ SaxionParttimeStudents <- SaxionCopy %>%
   mutate(endFullTime = 0.75) %>%
   transform(endFullTime = hm(format(as.POSIXct(endFullTime * 86400, origin = "1970-01-01", tz = "UTC"), "%H:%M")))%>%
   transform(endFullTime = make_datetime(year(DATE), month(DATE), day(DATE), hour(endFullTime), minute(endFullTime))) %>%
-  filter(START >= endFullTime) %>%
-  mutate(Parttime = if_else(str_detect(substrRight(CLASS, 3), "V"), TRUE, FALSE)) %>%
-  filter(Parttime == TRUE)
+  filter(END >= endFullTime) 
 
 #Get summarised information about the length of classes only for relevant variables.
-aggSax <- aggregate(SaxionParttimeStudents$Tdiff, by=list(Date = SaxionParttimeStudents$DATE, Bisoncode = SaxionParttimeStudents$BISONCODE, Weekday = SaxionParttimeStudents$WEEKDAY, Activity = SaxionParttimeStudents$ACTIVITY, Week = SaxionParttimeStudents$CALENDER_WEEK, Year = SaxionParttimeStudents$SCHOOLYEAR, Class = SaxionParttimeStudents$CLASS), FUN = sum)
+aggSaxP <- aggregate(SaxionParttimeStudents$Tdiff, by=list(Date = SaxionParttimeStudents$DATE, Bisoncode = SaxionParttimeStudents$BISONCODE, Weekday = SaxionParttimeStudents$WEEKDAY, Activity = SaxionParttimeStudents$ACTIVITY, Week = SaxionParttimeStudents$CALENDER_WEEK, Year = SaxionParttimeStudents$SCHOOLYEAR, Class = SaxionParttimeStudents$CLASS), FUN = sum)
 
 #Add a counter to the summarised information to later use it to count and sum all classes in a course or study per week. This is needed for the check
 #that classes are not spanning more than 4 days per week. This will be done per course, as well as per study
-aggSax <- aggSax %>%
+aggSaxP <- aggSaxP %>%
   #filter(Activity == 'L') %>%
   mutate(Counter = 1)
-aggSax2 <- aggregate(aggSax$Counter, by=list(Bisoncode = aggSax$Bisoncode, Week = aggSax$Week, Year = aggSax$Year, Class = aggSax$Class), FUN = sum)
+aggSaxP2 <- aggregate(aggSaxP$Counter, by=list(Bisoncode = aggSaxP$Bisoncode, Week = aggSaxP$Week, Year = aggSaxP$Year, Class = aggSaxP$Class), FUN = sum)
 
 #Get the percentage of weeks for courses that span more than 4 days per week
 #This number is unsurprisingly bery low, since single courses are very unlikely to be heldon each day of the week
-WeeksWithMoreThan4Days = length(aggSax2$x[aggSax2$x > 4])
-PercentageWeeksWithMoreThan4Days = (WeeksWithMoreThan4Days / length(aggSax2$x)) * 100
+WeeksWithMoreThan4Days = length(aggSaxP2$x[aggSax2$x > 4])
+PercentageWeeksWithMoreThan4Days = (WeeksWithMoreThan4Days / length(aggSaxP2$x)) * 100
 #cat("Number of weeks for students where lectures span more than 4 days (Per course): ", WeeksWithMoreThan4Days)
 cat("Percentage of weeks for students where lectures span more than 4 days (Per Course): ", PercentageWeeksWithMoreThan4Days)
 
 #Do the same summary for each study programme
-aggSax <- aggregate(SaxionParttimeStudents$Tdiff, by=list(Date = SaxionParttimeStudents$DATE, Study = SaxionParttimeStudents$EDUC.CODE1, Weekday = SaxionParttimeStudents$WEEKDAY, Activity = SaxionParttimeStudents$ACTIVITY, Week = SaxionParttimeStudents$CALENDER_WEEK, Year = SaxionParttimeStudents$SCHOOLYEAR, Class = SaxionParttimeStudents$CLASS), FUN = sum)
-aggSax <- aggSax %>%
+aggSaxP <- aggregate(SaxionParttimeStudents$Tdiff, by=list(Date = SaxionParttimeStudents$DATE, Study = SaxionParttimeStudents$EDUC.CODE1, Weekday = SaxionParttimeStudents$WEEKDAY, Activity = SaxionParttimeStudents$ACTIVITY, Week = SaxionParttimeStudents$CALENDER_WEEK, Year = SaxionParttimeStudents$SCHOOLYEAR, Class = SaxionParttimeStudents$CLASS), FUN = sum)
+aggSax <- aggSaxP %>%
   #filter(Activity == 'L') %>%
   mutate(Counter = 1)
-aggSax2 <- aggregate(aggSax$Counter, by=list(Study = aggSax$Study, Week = aggSax$Week, Year = aggSax$Year, Class = aggSax$Class), FUN = sum)
+aggSaxP2 <- aggregate(aggSaxP$Counter, by=list(Study = aggSaxP$Study, Week = aggSaxP$Week, Year = aggSaxP$Year, Class = aggSaxP$Class), FUN = sum)
 
 ##Get the percentage of weeks for study programmes that span more than 4 days per week
 #This number is alot higher since its muchmore likely for study programmes to be held at each day of the week.
-WeeksWithMoreThan4Days = length(aggSax2$x[aggSax2$x > 4])
-PercentageWeeksWithMoreThan4Days = (WeeksWithMoreThan4Days / length(aggSax2$x)) * 100
+WeeksWithMoreThan4Days = length(aggSaxP2$x[aggSaxP2$x > 4])
+PercentageWeeksWithMoreThan4Days = (WeeksWithMoreThan4Days / length(aggSaxP2$x)) * 100
 cat("Number of weeks for students where lectures span more than 4 days (Per Study): ", WeeksWithMoreThan4Days)
 cat("Percentage of weeks for students where lectures span more than 4 days (Per Study): ", PercentageWeeksWithMoreThan4Days)
 
 #Get the college hours of the full time students at Saxion, so the time they spend there including the breaks. Check if the students
 #have less than 4 college hours on any given day
-SaxionStudentCollegeHours <- SaxionParttimeStudents %>%
+SaxionParttimeStudentCollegeHours <- SaxionParttimeStudents %>%
   group_by(DATE, EDUC.CODE1) %>%
   summarise(latestClass = max(END, na.rm = TRUE),earliestClass = min(START, na.rm = TRUE)) %>%
   mutate(collegeHours = (latestClass - earliestClass) / 3600) %>%
   mutate(lessThan4Hours = if_else(collegeHours < 4, TRUE, FALSE))
 
 #Give the percentage of times students have less than 4 college hourson any given day with classes. 
-CountStudentsLessThan4CollegeHours = length(SaxionStudentCollegeHours$lessThan4Hours[SaxionStudentCollegeHours$lessThan4Hours])
-PercentageStudentsLessThan4CollegeHours = (CountStudentsLessThan4CollegeHours / length(SaxionStudentCollegeHours$lessThan4Hours)) * 100
+CountStudentsLessThan4CollegeHours = length(SaxionParttimeStudentCollegeHours$lessThan4Hours[SaxionParttimeStudentCollegeHours$lessThan4Hours])
+PercentageStudentsLessThan4CollegeHours = (CountStudentsLessThan4CollegeHours / length(SaxionParttimeStudentCollegeHours$lessThan4Hours)) * 100
 #cat("Number of times student have less than 4 college hours out of all days where they have classes (Per Study): ", CountStudentsLessThan4CollegeHours)
 cat("Percentage of times student have less than 4 college hours out of all days where they have classes (Per Study): ", PercentageStudentsLessThan4CollegeHours)
 
@@ -478,7 +476,21 @@ RankProgrammeByClassSize <-UtwenteActivity %>%
   drop_na %>%
   arrange(desc(Size))
 
+#Rank the study programmes by total number of college hours
+SaxionRankProgrammeByCollegeHours <- SaxionFulltimeStudents %>%
+  group_by(EDUC.CODE1) %>%
+  summarise(Tdiff = sum(Tdiff)) %>%
+  filter(Tdiff > 100) %>%
+  drop_na() %>%
+  arrange(desc(Tdiff))
 
+#Rank the study programmes by total number of college hours
+SaxionRankProgrammeByCollegeHoursP <- SaxionParttimeStudents %>%
+  group_by(EDUC.CODE1) %>%
+  summarise(Tdiff = sum(Tdiff)) %>%
+  filter(Tdiff > 100) %>%
+  drop_na() %>%
+  arrange(desc(Tdiff))
 
 
 
@@ -645,15 +657,7 @@ ggplot(UtwenteTimeSeriesTopClassSizes, aes(year, ClassSize, fill=Programme)) + g
 
 #------------------------------------------------------Saxion-------------------------------------------------
 
-UtwenteTimeSeries <- UtwenteStudentCollegeHours %>%
-  mutate(weekDay = wday(Date)) %>%
-  mutate(calendarWeek = strftime(Date, "%V")) %>%
-  mutate(year = year(Date)) %>%
-  drop_na() %>%
-  mutate(month = format(as.Date(Date),format = "%Y/%m")) %>%
-  group_by(year, month) %>%
-  summarise(collegeHours = mean(collegeHours), ClassSize = mean(Size)) %>%
-  arrange(year, month)
+#-------------------------------------------------Full time----------------------------------------------
 
 SaxionTimeSeries <- SaxionStudentCollegeHours %>%
   mutate(weekDay = wday(DATE)) %>%
@@ -662,4 +666,137 @@ SaxionTimeSeries <- SaxionStudentCollegeHours %>%
   drop_na() %>%
   mutate(month = format(as.Date(DATE), format = "%Y/%m")) %>%
   group_by(year,month) %>%
-  summarise(collegeHours = mean(collegeHours), ClassSize = mean(SI))
+  summarise(collegeHours = mean(collegeHours))
+
+#Plot the average college hours for each month in all years available in the data set 
+ggplot(subset(SaxionTimeSeries, year == 2013), aes(month, collegeHours)) + geom_bar(stat="identity", fill="blue") +
+  xlab("Month") + ylab("Average CollegeHours")+
+  theme_minimal() + theme(axis.text.x = element_text(angle = 90))
+
+ggplot(subset(SaxionTimeSeries, year == 2014), aes(month, collegeHours)) + geom_bar(stat="identity", fill="blue") +
+  xlab("Month") + ylab("Average CollegeHours")+
+  theme_minimal() + theme(axis.text.x = element_text(angle = 90))
+
+ggplot(subset(SaxionTimeSeries, year == 2015), aes(month, collegeHours)) + geom_bar(stat="identity", fill="blue") +
+  xlab("Month") + ylab("Average CollegeHours")+
+  theme_minimal() + theme(axis.text.x = element_text(angle = 90))
+
+#Plot the average college hours for each year available in the data set 
+ggplot(SaxionTimeSeries, aes(year, collegeHours)) + geom_bar(stat="identity", fill="blue") +
+  xlab("Month") + ylab("Average CollegeHours")+
+  theme_minimal() + theme(axis.text.x = element_text(angle = 90))
+
+#Now also include Programme information for the time series analysis
+SaxionTimeSeries2 <- SaxionFulltimeStudents %>%
+  mutate(weekDay = wday(DATE)) %>%
+  mutate(calendarWeek = strftime(DATE, "%V")) %>%
+  mutate(year = year(DATE)) %>%
+  drop_na(DATE) %>%
+  mutate(month = format(as.Date(DATE),format = "%Y/%m")) %>%
+  group_by(year, month, EDUC.CODE1) %>%
+  summarise(collegeHours = mean(Tdiff)) %>%
+  arrange(year, month, EDUC.CODE1)
+
+
+
+#Get the top 10 programmes with the highest count of college hours
+SaxionTop10ProgrammesHighestCollegeHours <- SaxionRankProgrammeByCollegeHours %>%
+  top_n(n = 10, wt = Tdiff)
+
+#Filter the time series so that only entries belonging to the top 10 programmes remain
+SaxionTimeSeriesTopCollegeHours <- SaxionTimeSeries2 %>%   
+  filter(EDUC.CODE1 %in% SaxionTop10ProgrammesHighestCollegeHours$EDUC.CODE1)
+
+#Make plots for each month in each year containing the average college hours for the top 10 programmes with the highest count in college hours
+ggplot(subset(SaxionTimeSeriesTopCollegeHours, year == 2013), aes(month, collegeHours, fill=EDUC.CODE1)) + geom_bar(stat="identity") +
+  xlab("Month") + ylab("Average College Hours")+
+  theme_minimal() + theme(axis.text.x = element_text(angle = 90)) +
+  ggtitle("Top 10 College Hour Programmes")
+
+ggplot(subset(SaxionTimeSeriesTopCollegeHours, year == 2014), aes(month, collegeHours, fill=EDUC.CODE1)) + geom_bar(stat="identity") +
+  xlab("Month") + ylab("Average College Hours")+
+  theme_minimal() + theme(axis.text.x = element_text(angle = 90)) +
+  ggtitle("Top 10 College Hour Programmes")
+
+ggplot(subset(SaxionTimeSeriesTopCollegeHours, year == 2015), aes(month, collegeHours, fill=EDUC.CODE1)) + geom_bar(stat="identity") +
+  xlab("Month") + ylab("Average College Hours")+
+  theme_minimal() + theme(axis.text.x = element_text(angle = 90)) +
+  ggtitle("Top 10 College Hour Programmes")
+
+#Do the same as before, now just containing all years in one plot
+ggplot(SaxionTimeSeriesTopCollegeHours, aes(year, collegeHours, fill=EDUC.CODE1)) + geom_bar(stat="identity") +
+  xlab("Month") + ylab("Average College Hours")+
+  theme_minimal() + theme(axis.text.x = element_text(angle = 90)) +
+  ggtitle("Top 10 College Hour Programmes")
+
+#----------------------------------------------------Part time------------------------------------------
+
+SaxionTimeSeries3 <- SaxionParttimeStudentCollegeHours %>%
+  mutate(weekDay = wday(DATE)) %>%
+  mutate(calendaWeek = strftime(DATE, "%V")) %>%
+  mutate(year = year(DATE)) %>%
+  drop_na() %>%
+  mutate(month = format(as.Date(DATE), format = "%Y/%m")) %>%
+  group_by(year,month) %>%
+  summarise(collegeHours = mean(collegeHours))
+
+#Plot the average college hours for each month in all years available in the data set 
+ggplot(subset(SaxionTimeSeries3, year == 2013), aes(month, collegeHours)) + geom_bar(stat="identity", fill="blue") +
+  xlab("Month") + ylab("Average CollegeHours")+
+  theme_minimal() + theme(axis.text.x = element_text(angle = 90))
+
+ggplot(subset(SaxionTimeSeries3, year == 2014), aes(month, collegeHours)) + geom_bar(stat="identity", fill="blue") +
+  xlab("Month") + ylab("Average CollegeHours")+
+  theme_minimal() + theme(axis.text.x = element_text(angle = 90))
+
+ggplot(subset(SaxionTimeSeries3, year == 2015), aes(month, collegeHours)) + geom_bar(stat="identity", fill="blue") +
+  xlab("Month") + ylab("Average CollegeHours")+
+  theme_minimal() + theme(axis.text.x = element_text(angle = 90))
+
+#Plot the average college hours for each year available in the data set 
+ggplot(SaxionTimeSeries3, aes(year, collegeHours)) + geom_bar(stat="identity", fill="blue") +
+  xlab("Month") + ylab("Average CollegeHours")+
+  theme_minimal() + theme(axis.text.x = element_text(angle = 90))
+
+#Now also include Programme information for the time series analysis
+SaxionTimeSeries4 <- SaxionParttimeStudents %>%
+  mutate(weekDay = wday(DATE)) %>%
+  mutate(calendarWeek = strftime(DATE, "%V")) %>%
+  mutate(year = year(DATE)) %>%
+  drop_na(DATE) %>%
+  mutate(month = format(as.Date(DATE),format = "%Y/%m")) %>%
+  group_by(year, month, EDUC.CODE1) %>%
+  summarise(collegeHours = mean(Tdiff)) %>%
+  arrange(year, month, EDUC.CODE1)
+
+
+
+#Get the top 10 programmes with the highest count of college hours
+SaxionTop10ProgrammesHighestCollegeHoursP <- SaxionRankProgrammeByCollegeHoursP %>%
+  top_n(n = 10, wt = Tdiff)
+
+#Filter the time series so that only entries belonging to the top 10 programmes remain
+SaxionTimeSeriesTopCollegeHoursP <- SaxionTimeSeries4 %>%   
+  filter(EDUC.CODE1 %in% SaxionTop10ProgrammesHighestCollegeHoursP$EDUC.CODE1)
+
+#Make plots for each month in each year containing the average college hours for the top 10 programmes with the highest count in college hours
+ggplot(subset(SaxionTimeSeriesTopCollegeHoursP, year == 2013), aes(month, collegeHours, fill=EDUC.CODE1)) + geom_bar(stat="identity") +
+  xlab("Month") + ylab("Average College Hours")+
+  theme_minimal() + theme(axis.text.x = element_text(angle = 90)) +
+  ggtitle("Top 10 College Hour Programmes")
+
+ggplot(subset(SaxionTimeSeriesTopCollegeHoursP, year == 2014), aes(month, collegeHours, fill=EDUC.CODE1)) + geom_bar(stat="identity") +
+  xlab("Month") + ylab("Average College Hours")+
+  theme_minimal() + theme(axis.text.x = element_text(angle = 90)) +
+  ggtitle("Top 10 College Hour Programmes")
+
+ggplot(subset(SaxionTimeSeriesTopCollegeHoursP, year == 2015), aes(month, collegeHours, fill=EDUC.CODE1)) + geom_bar(stat="identity") +
+  xlab("Month") + ylab("Average College Hours")+
+  theme_minimal() + theme(axis.text.x = element_text(angle = 90)) +
+  ggtitle("Top 10 College Hour Programmes")
+
+#Do the same as before, now just containing all years in one plot
+ggplot(SaxionTimeSeriesTopCollegeHoursP, aes(year, collegeHours, fill=EDUC.CODE1)) + geom_bar(stat="identity") +
+  xlab("Month") + ylab("Average College Hours")+
+  theme_minimal() + theme(axis.text.x = element_text(angle = 90)) +
+  ggtitle("Top 10 College Hour Programmes")
