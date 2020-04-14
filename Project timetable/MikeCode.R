@@ -364,6 +364,61 @@ PercentageStudentsLessThan4CollegeHours = (CountStudentsLessThan4CollegeHours / 
 #cat("Number of times student have less than 4 college hours out of all days where they have classes (Per Study): ", CountStudentsLessThan4CollegeHours)
 cat("Percentage of times student have less than 4 college hours out of all days where they have classes (Per Study): ", PercentageStudentsLessThan4CollegeHours)
 
+#-------------------------------------------------Saxion Part Time----------------------------------------------------------
+
+SaxionParttimeStudents <- SaxionCopy %>%
+  mutate(endFullTime = 0.75) %>%
+  transform(endFullTime = hm(format(as.POSIXct(endFullTime * 86400, origin = "1970-01-01", tz = "UTC"), "%H:%M")))%>%
+  transform(endFullTime = make_datetime(year(DATE), month(DATE), day(DATE), hour(endFullTime), minute(endFullTime))) %>%
+  filter(START >= endFullTime) %>%
+  mutate(Parttime = if_else(str_detect(substrRight(CLASS, 3), "V"), TRUE, FALSE)) %>%
+  filter(Parttime == TRUE)
+
+#Get summarised information about the length of classes only for relevant variables.
+aggSax <- aggregate(SaxionParttimeStudents$Tdiff, by=list(Date = SaxionParttimeStudents$DATE, Bisoncode = SaxionParttimeStudents$BISONCODE, Weekday = SaxionParttimeStudents$WEEKDAY, Activity = SaxionParttimeStudents$ACTIVITY, Week = SaxionParttimeStudents$CALENDER_WEEK, Year = SaxionParttimeStudents$SCHOOLYEAR, Class = SaxionParttimeStudents$CLASS), FUN = sum)
+
+#Add a counter to the summarised information to later use it to count and sum all classes in a course or study per week. This is needed for the check
+#that classes are not spanning more than 4 days per week. This will be done per course, as well as per study
+aggSax <- aggSax %>%
+  #filter(Activity == 'L') %>%
+  mutate(Counter = 1)
+aggSax2 <- aggregate(aggSax$Counter, by=list(Bisoncode = aggSax$Bisoncode, Week = aggSax$Week, Year = aggSax$Year, Class = aggSax$Class), FUN = sum)
+
+#Get the percentage of weeks for courses that span more than 4 days per week
+#This number is unsurprisingly bery low, since single courses are very unlikely to be heldon each day of the week
+WeeksWithMoreThan4Days = length(aggSax2$x[aggSax2$x > 4])
+PercentageWeeksWithMoreThan4Days = (WeeksWithMoreThan4Days / length(aggSax2$x)) * 100
+#cat("Number of weeks for students where lectures span more than 4 days (Per course): ", WeeksWithMoreThan4Days)
+cat("Percentage of weeks for students where lectures span more than 4 days (Per Course): ", PercentageWeeksWithMoreThan4Days)
+
+#Do the same summary for each study programme
+aggSax <- aggregate(SaxionParttimeStudents$Tdiff, by=list(Date = SaxionParttimeStudents$DATE, Study = SaxionParttimeStudents$EDUC.CODE1, Weekday = SaxionParttimeStudents$WEEKDAY, Activity = SaxionParttimeStudents$ACTIVITY, Week = SaxionParttimeStudents$CALENDER_WEEK, Year = SaxionParttimeStudents$SCHOOLYEAR, Class = SaxionParttimeStudents$CLASS), FUN = sum)
+aggSax <- aggSax %>%
+  #filter(Activity == 'L') %>%
+  mutate(Counter = 1)
+aggSax2 <- aggregate(aggSax$Counter, by=list(Study = aggSax$Study, Week = aggSax$Week, Year = aggSax$Year, Class = aggSax$Class), FUN = sum)
+
+##Get the percentage of weeks for study programmes that span more than 4 days per week
+#This number is alot higher since its muchmore likely for study programmes to be held at each day of the week.
+WeeksWithMoreThan4Days = length(aggSax2$x[aggSax2$x > 4])
+PercentageWeeksWithMoreThan4Days = (WeeksWithMoreThan4Days / length(aggSax2$x)) * 100
+cat("Number of weeks for students where lectures span more than 4 days (Per Study): ", WeeksWithMoreThan4Days)
+cat("Percentage of weeks for students where lectures span more than 4 days (Per Study): ", PercentageWeeksWithMoreThan4Days)
+
+#Get the college hours of the full time students at Saxion, so the time they spend there including the breaks. Check if the students
+#have less than 4 college hours on any given day
+SaxionStudentCollegeHours <- SaxionParttimeStudents %>%
+  group_by(DATE, EDUC.CODE1) %>%
+  summarise(latestClass = max(END, na.rm = TRUE),earliestClass = min(START, na.rm = TRUE)) %>%
+  mutate(collegeHours = (latestClass - earliestClass) / 3600) %>%
+  mutate(lessThan4Hours = if_else(collegeHours < 4, TRUE, FALSE))
+
+#Give the percentage of times students have less than 4 college hourson any given day with classes. 
+CountStudentsLessThan4CollegeHours = length(SaxionStudentCollegeHours$lessThan4Hours[SaxionStudentCollegeHours$lessThan4Hours])
+PercentageStudentsLessThan4CollegeHours = (CountStudentsLessThan4CollegeHours / length(SaxionStudentCollegeHours$lessThan4Hours)) * 100
+#cat("Number of times student have less than 4 college hours out of all days where they have classes (Per Study): ", CountStudentsLessThan4CollegeHours)
+cat("Percentage of times student have less than 4 college hours out of all days where they have classes (Per Study): ", PercentageStudentsLessThan4CollegeHours)
+
 #--------------------------------------------------Saxion Teachers-------------------------------------------------
 
 #Create a dataset for teacher where entries with missing teacher data are removed and the information is aggregated by the impotant variables
@@ -586,3 +641,25 @@ ggplot(UtwenteTimeSeriesTopClassSizes, aes(year, ClassSize, fill=Programme)) + g
   xlab("Month") + ylab("Average College Hours")+
   theme_minimal() + theme(axis.text.x = element_text(angle = 90)) +
   ggtitle("Top 10 College Hour Programmes")
+
+
+#------------------------------------------------------Saxion-------------------------------------------------
+
+UtwenteTimeSeries <- UtwenteStudentCollegeHours %>%
+  mutate(weekDay = wday(Date)) %>%
+  mutate(calendarWeek = strftime(Date, "%V")) %>%
+  mutate(year = year(Date)) %>%
+  drop_na() %>%
+  mutate(month = format(as.Date(Date),format = "%Y/%m")) %>%
+  group_by(year, month) %>%
+  summarise(collegeHours = mean(collegeHours), ClassSize = mean(Size)) %>%
+  arrange(year, month)
+
+SaxionTimeSeries <- SaxionStudentCollegeHours %>%
+  mutate(weekDay = wday(DATE)) %>%
+  mutate(calendaWeek = strftime(DATE, "%V")) %>%
+  mutate(year = year(DATE)) %>%
+  drop_na() %>%
+  mutate(month = format(as.Date(DATE), format = "%Y/%m")) %>%
+  group_by(year,month) %>%
+  summarise(collegeHours = mean(collegeHours), ClassSize = mean(SI))
