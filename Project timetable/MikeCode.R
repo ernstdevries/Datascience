@@ -384,14 +384,15 @@ aggSaxP2 <- aggregate(aggSaxP$Counter, by=list(Bisoncode = aggSaxP$Bisoncode, We
 
 #Get the percentage of weeks for courses that span more than 4 days per week
 #This number is unsurprisingly bery low, since single courses are very unlikely to be heldon each day of the week
-WeeksWithMoreThan4Days = length(aggSaxP2$x[aggSax2$x > 4])
+WeeksWithMoreThan4Days = length(aggSaxP2$x[aggSaxP2$x > 4])
+print(length(aggSaxP2$x))
 PercentageWeeksWithMoreThan4Days = (WeeksWithMoreThan4Days / length(aggSaxP2$x)) * 100
-#cat("Number of weeks for students where lectures span more than 4 days (Per course): ", WeeksWithMoreThan4Days)
+cat("Number of weeks for students where lectures span more than 4 days (Per course): ", WeeksWithMoreThan4Days)
 cat("Percentage of weeks for students where lectures span more than 4 days (Per Course): ", PercentageWeeksWithMoreThan4Days)
 
 #Do the same summary for each study programme
 aggSaxP <- aggregate(SaxionParttimeStudents$Tdiff, by=list(Date = SaxionParttimeStudents$DATE, Study = SaxionParttimeStudents$EDUC.CODE1, Weekday = SaxionParttimeStudents$WEEKDAY, Activity = SaxionParttimeStudents$ACTIVITY, Week = SaxionParttimeStudents$CALENDER_WEEK, Year = SaxionParttimeStudents$SCHOOLYEAR, Class = SaxionParttimeStudents$CLASS), FUN = sum)
-aggSax <- aggSaxP %>%
+aggSaxP <- aggSaxP %>%
   #filter(Activity == 'L') %>%
   mutate(Counter = 1)
 aggSaxP2 <- aggregate(aggSaxP$Counter, by=list(Study = aggSaxP$Study, Week = aggSaxP$Week, Year = aggSaxP$Year, Class = aggSaxP$Class), FUN = sum)
@@ -563,7 +564,7 @@ ggplot(UtwenteTimeSeries, aes(year, ClassSize)) + geom_bar(stat="identity", fill
   theme_minimal() + theme(axis.text.x = element_text(angle = 90))
 
 #Now also include Programme information for the time series analysis
-UtwenteTimeSeries2 <- UtwenteActivity %>%
+UtwenteTimeSeries2 <- UtwenteStudentCollegeHours %>%
   mutate(weekDay = wday(Date)) %>%
   mutate(calendarWeek = strftime(Date, "%V")) %>%
   mutate(year = year(Date)) %>%
