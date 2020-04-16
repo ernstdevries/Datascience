@@ -7,6 +7,7 @@ library(tidyr)
 library(readxl)
 library(openxlsx)
 library(stringr)
+library(ggplot2)
 
 data1 <-read_delim(file="Project timetable/Activiteitenoverzicht_2014-2015_v2.csv", delim=",", col_names = TRUE, col_types = NULL, locale = locale(encoding = 'LATIN1'))
 head(data0)
@@ -21,7 +22,7 @@ dataCourse <-read_excel("Project timetable/UT_courses_Osiris_with_teacher_2013-2
 dataCourse <- rename(dataCourse,Collegejaar = Collegeyear, Cursus = Course, Cursusnaam = Coursename, Medewerker = Teachernr)
 dataCourse <- within(dataCourse,rm("Teacher-lastname"))
   
-rm
+
 dataCourse2 <-read_excel("Project timetable/UT_courses_Osiris_with_teacher_2014-2015.xlsx", col_names = TRUE, col_types = NULL, skip = 3)
 dataCourse2 <- rename(dataCourse2,Collegejaar = Collegeyear, Cursus = Course, Cursusnaam = Coursename, Medewerker = Teachernr)
 dataCourse2 <- within(dataCourse2,rm("Teacher-lastname"))
@@ -41,7 +42,7 @@ data0 <-read_delim(file="Project timetable/Activiteitenoverzicht_2013-2014_v2.cs
 
 
 
-data0 <- data0 %>%
+finalData <- finalData %>%
   mutate_all(~as.character(replace(.,grepl("^#",.),"abc"))) %>%
   unite(Hostkey,Hostkey,Hostkey_1) %>%
   mutate(Hostkey = stringr::str_extract_all(Hostkey,'\\d+')) %>%
@@ -110,6 +111,7 @@ Mosthours <- data0 %>%
     summarise(TimeOccupied = sum(Tdiff), count = n()) %>%
     ungroup(Zaal.Activiteit) %>%
     mutate(UD = length(unique(Occupation2013$Datum)) *8) %>%
+    mutate(Year = 2013) %>%
     mutate(Occup = TimeOccupied / UD *100)
 
   Occupation2014 <- Occupation2014 %>%
@@ -119,6 +121,7 @@ Mosthours <- data0 %>%
     summarise(TimeOccupied = sum(Tdiff), count = n()) %>%
     ungroup(Zaal.Activiteit) %>%
     mutate(UD = length(unique(Occupation2014$Datum)) *8) %>%
+    mutate(Year = 2014) %>%
     mutate(Occup = TimeOccupied / UD *100)
   
   Occupation2015 <- Occupation2015 %>%
@@ -128,6 +131,7 @@ Mosthours <- data0 %>%
     summarise(TimeOccupied = sum(Tdiff), count = n()) %>%
     ungroup(Zaal.Activiteit) %>%
     mutate(UD = length(unique(Occupation2015$Datum)) *8) %>%
+    mutate(Year = 2015) %>%
     mutate(Occup = TimeOccupied / UD *100)
   
   Occupation2016 <- Occupation2016 %>%
@@ -137,6 +141,7 @@ Mosthours <- data0 %>%
     summarise(TimeOccupied = sum(Tdiff), count = n()) %>%
     ungroup(Zaal.Activiteit) %>%
     mutate(UD = length(unique(Occupation2016$Datum)) *8) %>%
+    mutate(Year = 2016) %>%
     mutate(Occup = TimeOccupied / UD *100)
   
   Occupation2017 <- Occupation2017 %>%
@@ -146,15 +151,17 @@ Mosthours <- data0 %>%
     summarise(TimeOccupied = sum(Tdiff), count = n()) %>%
     ungroup(Zaal.Activiteit) %>%
     mutate(UD = length(unique(Occupation2017$Datum)) *8) %>%
+    mutate(Year = 2017) %>%
     mutate(Occup = TimeOccupied / UD *100)
+  
   
   
   BuildingOccupation2013 <- Occupation2013 
   BuildingOccupation2013 <- BuildingOccupation2013 %>%
     mutate(Zaal.Activiteit = substr(sub("ZZ ",'',Occupation2013$Zaal.Activiteit),1,2)) %>%
     group_by(Zaal.Activiteit) %>%
-    summarise(TimeOccupied = sum(TimeOccupied), MaxOccup = n() *640) %>%
-    mutate(OccupationPercentage = TimeOccupied / MaxOccup *100) %>%
+    summarise(TimeOccupied = sum(TimeOccupied)) %>%
+    mutate(Year = 2013) %>%
     rename(Gebouw = Zaal.Activiteit)
     
   ##Multiple the n() by 640 because unique dates * 8 gives this value. 
@@ -165,8 +172,8 @@ Mosthours <- data0 %>%
   BuildingOccupation2014 <- BuildingOccupation2014 %>%
     mutate(Zaal.Activiteit = substr(sub("ZZ ",'',Occupation2014$Zaal.Activiteit),1,2)) %>%
     group_by(Zaal.Activiteit) %>%
-    summarise(TimeOccupied = sum(TimeOccupied), MaxOccup = n() *1800) %>%
-    mutate(OccupationPercentage = TimeOccupied / MaxOccup *100) %>%
+    summarise(TimeOccupied = sum(TimeOccupied)) %>%
+    mutate(Year = 2014) %>%
     rename(Gebouw = Zaal.Activiteit)
     
     
@@ -174,26 +181,125 @@ Mosthours <- data0 %>%
   BuildingOccupation2015 <- BuildingOccupation2015 %>%
     mutate(Zaal.Activiteit = substr(sub("ZZ ",'',Occupation2015$Zaal.Activiteit),1,2)) %>%
     group_by(Zaal.Activiteit) %>%
-    summarise(TimeOccupied = sum(TimeOccupied), MaxOccup = n() *2000) %>%
-    mutate(OccupationPercentage = TimeOccupied / MaxOccup *100) %>%
+    summarise(TimeOccupied = sum(TimeOccupied)) %>%
+    mutate(Year = 2015) %>%
     rename(Gebouw = Zaal.Activiteit)
 
   BuildingOccupation2016 <- Occupation2016 
   BuildingOccupation2016 <- BuildingOccupation2016 %>%
     mutate(Zaal.Activiteit = substr(sub("ZZ ",'',Occupation2016$Zaal.Activiteit),1,2)) %>%
     group_by(Zaal.Activiteit) %>%
-    summarise(TimeOccupied = sum(TimeOccupied), MaxOccup = n() *1760) %>%
-    mutate(OccupationPercentage = TimeOccupied / MaxOccup *100) %>%
+    summarise(TimeOccupied = sum(TimeOccupied)) %>%
+    mutate(Year = 2016) %>%
     rename(Gebouw = Zaal.Activiteit)
 
   BuildingOccupation2017 <- Occupation2017 
   BuildingOccupation2017 <- BuildingOccupation2017 %>%
     mutate(Zaal.Activiteit = substr(sub("ZZ ",'',Occupation2017$Zaal.Activiteit),1,2)) %>%
     group_by(Zaal.Activiteit) %>%
-    summarise(TimeOccupied = sum(TimeOccupied), MaxOccup = n() *832) %>%
-    mutate(OccupationPercentage = TimeOccupied / MaxOccup *100) %>%
+    summarise(TimeOccupied = sum(TimeOccupied)) %>%
+    mutate(Year = 2017) %>%
     rename(Gebouw = Zaal.Activiteit)
+  
+ TotalOccupation =  rbind(Occupation2013,Occupation2014,Occupation2015,Occupation2016,Occupation2017)
+ TotalBuildingOccupation = rbind(BuildingOccupation2013,BuildingOccupation2014,BuildingOccupation2015,BuildingOccupation2016,BuildingOccupation2017)
 
 
+write.xlsx(TotalOccupation,"TotalOccupation.xlsx")
+write.xlsx(TotalBuildingOccupation,"TotalBuildingOccupation.xlsx")
 
 
+Activities2013 <- filter(finalData, Collegejaar == 2013)
+Activities2014 <- filter(finalData, Collegejaar == 2014)
+Activities2015 <- filter(finalData, Collegejaar == 2015)
+Activities2016 <- filter(finalData, Collegejaar == 2016)
+Activities2017 <- filter(finalData, Collegejaar == 2017)
+
+
+Activities2013 <- Activities2013 %>%
+  drop_na(Zaal.Activiteit) %>%
+  drop_na(Activiteitstype) %>%
+  group_by(Zaal.Activiteit, Activiteitstype) %>%
+  distinct(Datum, Tijd.van,Tijd.tot.en.met, Activiteitstype) %>%
+  select(Zaal.Activiteit,Activiteitstype) %>%
+  summarize(Frequency = n()) %>%
+  ungroup() %>%
+  mutate(Zaal.Activiteit = substr(sub("ZZ ",'',Zaal.Activiteit),1,2)) %>%
+  group_by(Zaal.Activiteit,Activiteitstype) %>%
+  summarise(Frequency= sum(Frequency)) %>%
+  ungroup(Zaal.Activiteit,Activiteitstype) %>%
+  group_by(Zaal.Activiteit) %>%
+  mutate(Total = sum(Frequency)) %>%
+  mutate(Percentage = Frequency / Total *100) %>%
+  mutate(Year = 2013)
+
+Activities2014 <- Activities2014 %>%
+  drop_na(Zaal.Activiteit) %>%
+  drop_na(Activiteitstype) %>%
+  group_by(Zaal.Activiteit, Activiteitstype) %>%
+  distinct(Datum, Tijd.van,Tijd.tot.en.met, Activiteitstype) %>%
+  select(Zaal.Activiteit,Activiteitstype) %>%
+  summarize(Frequency = n()) %>%
+  ungroup() %>%
+  mutate(Zaal.Activiteit = substr(sub("ZZ ",'',Zaal.Activiteit),1,2)) %>%
+  group_by(Zaal.Activiteit,Activiteitstype) %>%
+  summarise(Frequency= sum(Frequency)) %>%
+  ungroup(Zaal.Activiteit,Activiteitstype) %>%
+  group_by(Zaal.Activiteit) %>%
+  mutate(Total = sum(Frequency)) %>%
+  mutate(Percentage = Frequency / Total *100) %>%
+  mutate(Year = 2014)
+
+Activities2015 <- Activities2015 %>%
+  drop_na(Zaal.Activiteit) %>%
+  drop_na(Activiteitstype) %>%
+  group_by(Zaal.Activiteit, Activiteitstype) %>%
+  distinct(Datum, Tijd.van,Tijd.tot.en.met, Activiteitstype) %>%
+  select(Zaal.Activiteit,Activiteitstype) %>%
+  summarize(Frequency = n()) %>%
+  ungroup() %>%
+  mutate(Zaal.Activiteit = substr(sub("ZZ ",'',Zaal.Activiteit),1,2)) %>%
+  group_by(Zaal.Activiteit,Activiteitstype) %>%
+  summarise(Frequency= sum(Frequency)) %>%
+  ungroup(Zaal.Activiteit,Activiteitstype) %>%
+  group_by(Zaal.Activiteit) %>%
+  mutate(Total = sum(Frequency)) %>%
+  mutate(Percentage = Frequency / Total *100) %>%
+  mutate(Year = 2015)
+
+Activities2016 <- Activities2016 %>%
+  drop_na(Zaal.Activiteit) %>%
+  drop_na(Activiteitstype) %>%
+  group_by(Zaal.Activiteit, Activiteitstype) %>%
+  distinct(Datum, Tijd.van,Tijd.tot.en.met, Activiteitstype) %>%
+  select(Zaal.Activiteit,Activiteitstype) %>%
+  summarize(Frequency = n()) %>%
+  ungroup() %>%
+  mutate(Zaal.Activiteit = substr(sub("ZZ ",'',Zaal.Activiteit),1,2)) %>%
+  group_by(Zaal.Activiteit,Activiteitstype) %>%
+  summarise(Frequency= sum(Frequency)) %>%
+  ungroup(Zaal.Activiteit,Activiteitstype) %>%
+  group_by(Zaal.Activiteit) %>%
+  mutate(Total = sum(Frequency)) %>%
+  mutate(Percentage = Frequency / Total *100) %>%
+  mutate(Year = 2016)
+
+Activities2017 <- Activities2017 %>%
+  drop_na(Zaal.Activiteit) %>%
+  drop_na(Activiteitstype) %>%
+  group_by(Zaal.Activiteit, Activiteitstype) %>%
+  distinct(Datum, Tijd.van,Tijd.tot.en.met, Activiteitstype) %>%
+  select(Zaal.Activiteit,Activiteitstype) %>%
+  summarize(Frequency = n()) %>%
+  ungroup() %>%
+  mutate(Zaal.Activiteit = substr(sub("ZZ ",'',Zaal.Activiteit),1,2)) %>%
+  group_by(Zaal.Activiteit,Activiteitstype) %>%
+  summarise(Frequency= sum(Frequency)) %>%
+  ungroup(Zaal.Activiteit,Activiteitstype) %>%
+  group_by(Zaal.Activiteit) %>%
+  mutate(Total = sum(Frequency)) %>%
+  mutate(Percentage = Frequency / Total *100) %>%
+  mutate(Year = 2017)
+
+TotalActivities = rbind(Activities2013,Activities2014,Activities2015,Activities2016,Activities2017)
+write.xlsx(TotalActivities,"TotalActivities.xlsx")
